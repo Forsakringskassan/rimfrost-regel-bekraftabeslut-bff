@@ -1,5 +1,5 @@
 {
-  "name": "micro-fe-bff-template",
+  "name": "rimfrost-regel-bekraftabeslut-bff",
   "version": "1.0.0",
   "description": "A TypeScript BFF (Backend-For-Frontend) template for micro frontends with Express, hot reload, and data transformation examples",
   "type": "module",

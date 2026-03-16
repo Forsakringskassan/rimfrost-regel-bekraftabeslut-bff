@@ -1,17 +1,17 @@
-import express from 'express';
-import path from "path";
+import express from "express";
 import { fileURLToPath } from "node:url";
+import path from "path";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
-const PORT = process.env.PORT || 9002;
+const PORT = process.env.PORT || 9003;
+const BEKRAFTABESLUT_URL = process.env.BEKRAFTABESLUT_URL || "http://localhost:8891";
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Logging of all incoming requests
 app.use((req, res, next) => {
     console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
     next();
@@ -19,8 +19,8 @@ app.use((req, res, next) => {
 
 app.use((req, res, next) => {
     res.header("Access-Control-Allow-Origin", "*");
-    res.header("Access-Control-Allow-Methods", "GET, PUT, POST, PATCH, DELETE, OPTIONS");
-    res.header("Access-Control-Allow-Headers", "Content-Type, Authorization, Content-Length, X-Requested-With");
+    res.header("Access-Control-Allow-Methods", "GET, POST, PATCH, OPTIONS");
+    res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
     if (req.method === "OPTIONS") {
         res.sendStatus(200);
     } else {
@@ -29,31 +29,52 @@ app.use((req, res, next) => {
 });
 
 app.get("/api/health", (req, res) => {
-    console.log("Health check called");
     res.json({ status: "ok", timestamp: new Date().toISOString() });
 });
 
-// Endpoint for fetching a random cat fact from meowfacts API
-app.get("/api/cat-fact", async (req, res) => {
+// Hämta beslutsdata
+app.get("/api/regel/bekraftabeslut/:handlaggningId", async (req, res) => {
+    const { handlaggningId } = req.params;
     try {
-        console.log("Fetching cat fact from meowfacts API");
-        
-        const response = await fetch("https://meowfacts.herokuapp.com");
-        
-        if (!response.ok) {
-            console.error(`Meowfacts API error: ${response.status}`);
-            return res.status(response.status).json({ error: "Failed to fetch cat fact from external API" });
-        }
-        
-        const data = await response.json();
-        console.log("Cat fact fetched successfully");
-        res.json(data);
+        const response = await fetch(
+            `${BEKRAFTABESLUT_URL}/regel/bekraftabeslut/${handlaggningId}`
+        );
+        res.status(response.status).json(await response.json());
     } catch (error) {
-        console.error("Error fetching cat fact:", error);
-        res.status(500).json({ error: "Internal server error", message: error instanceof Error ? error.message : String(error) });
+        console.error("Error fetching beslutsdata:", error);
+        res.status(500).json({ error: "Internal server error" });
     }
 });
 
+// Bekräfta beslut (done)
+app.post("/api/regel/bekraftabeslut/:handlaggningId/done", async (req, res) => {
+    const { handlaggningId } = req.params;
+    try {
+        const response = await fetch(
+            `${BEKRAFTABESLUT_URL}/regel/bekraftabeslut/${handlaggningId}/done`,
+            { method: "POST", headers: { "Content-Type": "application/json" } }
+        );
+        res.status(response.status).end();
+    } catch (error) {
+        console.error("Error posting done:", error);
+        res.status(500).json({ error: "Internal server error" });
+    }
+});
+
+// Uppdatera ersättning
+app.patch("/api/regel/bekraftabeslut/:handlaggningId/ersattning/:ersattningId", async (req, res) => {
+    const { handlaggningId, ersattningId } = req.params;
+    try {
+        const response = await fetch(
+            `${BEKRAFTABESLUT_URL}/regel/bekraftabeslut/${handlaggningId}/ersattning/${ersattningId}`,
+            { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(req.body) }
+        );
+        res.status(response.status).end();
+    } catch (error) {
+        console.error("Error patching ersattning:", error);
+        res.status(500).json({ error: "Internal server error" });
+    }
+});
 
 app.listen(PORT, () => {
     console.log(`BFF server running on port ${PORT}`);
