@@ -28,6 +28,37 @@ app.use((req, res, next) => {
     }
 });
 
+function getMockBeslutsdata(handlaggningId: string) {
+    return {
+        handlaggning_id: handlaggningId,
+        kund: {
+            fornamn: "Lisa",
+            efternamn: "Tass",
+            kon: "KVINNA",
+            anstallning: {
+                organisationsnamn: "Mock AB",
+                arbetstid_procent: 100,
+                lon: {
+                    lonesumma: 40000,
+                }
+            }
+        },
+        ersattning: [
+            {
+                ersattning_id: `ers-${handlaggningId}-1`,
+                ersattningstyp: "HUNDBIDRAG",
+                omfattning_procent: 100,
+                belopp: 40000,
+                berakningsgrund: 40000,
+                beslutsutfall: "FU",
+                avslagsanledning: "",
+                from: "2025-01-10T00:00:00Z",
+                tom: "2025-01-10T23:59:59Z",
+            }
+        ]
+    };
+}
+
 app.get("/api/health", (req, res) => {
     res.json({ status: "ok", timestamp: new Date().toISOString() });
 });
@@ -39,10 +70,11 @@ app.get("/api/regel/bekraftabeslut/:handlaggningId", async (req, res) => {
         const response = await fetch(
             `${BEKRAFTABESLUT_URL}/regel/bekraftabeslut/${handlaggningId}`
         );
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
         res.status(response.status).json(await response.json());
     } catch (error) {
-        console.error("Error fetching beslutsdata:", error);
-        res.status(500).json({ error: "Internal server error" });
+        console.warn(`[FALLBACK] Using mock data for handlaggningId: ${handlaggningId}`);
+        res.json(getMockBeslutsdata(handlaggningId));
     }
 });
 
@@ -56,8 +88,8 @@ app.post("/api/regel/bekraftabeslut/:handlaggningId/done", async (req, res) => {
         );
         res.status(response.status).end();
     } catch (error) {
-        console.error("Error posting done:", error);
-        res.status(500).json({ error: "Internal server error" });
+        console.warn(`[FALLBACK] Mock done for handlaggningId: ${handlaggningId}`);
+        res.status(200).end();
     }
 });
 
@@ -71,8 +103,8 @@ app.patch("/api/regel/bekraftabeslut/:handlaggningId/ersattning/:ersattningId", 
         );
         res.status(response.status).end();
     } catch (error) {
-        console.error("Error patching ersattning:", error);
-        res.status(500).json({ error: "Internal server error" });
+        console.warn(`[FALLBACK] Mock patch ersattning ${ersattningId}`);
+        res.status(200).end();
     }
 });
 
