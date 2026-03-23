@@ -1,6 +1,7 @@
 import express from "express";
 import { fileURLToPath } from "node:url";
 import path from "path";
+import { getMockBeslutsdata } from "./utils/mockDataService.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -19,7 +20,7 @@ app.use((req, res, next) => {
 
 app.use((req, res, next) => {
     res.header("Access-Control-Allow-Origin", "*");
-    res.header("Access-Control-Allow-Methods", "GET, POST, PATCH, OPTIONS");
+    res.header("Access-Control-Allow-Methods", "GET, PATCH, OPTIONS");
     res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
     if (req.method === "OPTIONS") {
         res.sendStatus(200);
@@ -27,37 +28,6 @@ app.use((req, res, next) => {
         next();
     }
 });
-
-function getMockBeslutsdata(handlaggningId: string) {
-    return {
-        handlaggning_id: handlaggningId,
-        kund: {
-            fornamn: "Lisa",
-            efternamn: "Tass",
-            kon: "KVINNA",
-            anstallning: {
-                organisationsnamn: "Mock AB",
-                arbetstid_procent: 100,
-                lon: {
-                    lonesumma: 40000,
-                }
-            }
-        },
-        ersattning: [
-            {
-                ersattning_id: `ers-${handlaggningId}-1`,
-                ersattningstyp: "HUNDBIDRAG",
-                omfattning_procent: 100,
-                belopp: 40000,
-                berakningsgrund: 40000,
-                beslutsutfall: "FU",
-                avslagsanledning: "",
-                from: "2025-01-10T00:00:00Z",
-                tom: "2025-01-10T23:59:59Z",
-            }
-        ]
-    };
-}
 
 app.get("/api/health", (req, res) => {
     res.json({ status: "ok", timestamp: new Date().toISOString() });
@@ -78,32 +48,23 @@ app.get("/api/regel/bekraftabeslut/:handlaggningId", async (req, res) => {
     }
 });
 
-// Bekräfta beslut (done)
-app.post("/api/regel/bekraftabeslut/:handlaggningId/done", async (req, res) => {
+// Bekräfta beslut - PATCH enligt OpenAPI
+app.patch("/api/regel/bekraftabeslut/:handlaggningId", async (req, res) => {
     const { handlaggningId } = req.params;
+    const { ersattning_id, ersattningsstatus } = req.body;
     try {
         const response = await fetch(
-            `${BEKRAFTABESLUT_URL}/regel/bekraftabeslut/${handlaggningId}/done`,
-            { method: "POST", headers: { "Content-Type": "application/json" } }
+            `${BEKRAFTABESLUT_URL}/regel/bekraftabeslut/${handlaggningId}`,
+            {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ ersattning_id, ersattningsstatus })
+            }
         );
-        res.status(response.status).end();
-    } catch (error) {
-        console.warn(`[FALLBACK] Mock done for handlaggningId: ${handlaggningId}`);
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
         res.status(200).end();
-    }
-});
-
-// Uppdatera ersättning
-app.patch("/api/regel/bekraftabeslut/:handlaggningId/ersattning/:ersattningId", async (req, res) => {
-    const { handlaggningId, ersattningId } = req.params;
-    try {
-        const response = await fetch(
-            `${BEKRAFTABESLUT_URL}/regel/bekraftabeslut/${handlaggningId}/ersattning/${ersattningId}`,
-            { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(req.body) }
-        );
-        res.status(response.status).end();
     } catch (error) {
-        console.warn(`[FALLBACK] Mock patch ersattning ${ersattningId}`);
+        console.warn(`[FALLBACK] Mock patch för handlaggningId: ${handlaggningId}`);
         res.status(200).end();
     }
 });
