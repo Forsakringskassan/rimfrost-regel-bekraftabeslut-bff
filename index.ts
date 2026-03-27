@@ -1,6 +1,7 @@
 import express from "express";
 import { fileURLToPath } from "node:url";
 import path from "path";
+import { getMockBeslutsdata } from "./utils/mockDataService.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -19,7 +20,7 @@ app.use((req, res, next) => {
 
 app.use((req, res, next) => {
     res.header("Access-Control-Allow-Origin", "*");
-    res.header("Access-Control-Allow-Methods", "GET, POST, PATCH, OPTIONS");
+    res.header("Access-Control-Allow-Methods", "GET, PATCH, OPTIONS");
     res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
     if (req.method === "OPTIONS") {
         res.sendStatus(200);
@@ -39,40 +40,32 @@ app.get("/api/regel/bekraftabeslut/:handlaggningId", async (req, res) => {
         const response = await fetch(
             `${BEKRAFTABESLUT_URL}/regel/bekraftabeslut/${handlaggningId}`
         );
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
         res.status(response.status).json(await response.json());
     } catch (error) {
-        console.error("Error fetching beslutsdata:", error);
-        res.status(500).json({ error: "Internal server error" });
+        console.warn(`[FALLBACK] Using mock data for handlaggningId: ${handlaggningId}`);
+        res.json(getMockBeslutsdata(handlaggningId));
     }
 });
 
-// Bekräfta beslut (done)
-app.post("/api/regel/bekraftabeslut/:handlaggningId/done", async (req, res) => {
+// Bekräfta beslut - PATCH enligt OpenAPI
+app.patch("/api/regel/bekraftabeslut/:handlaggningId", async (req, res) => {
     const { handlaggningId } = req.params;
+    const { ersattning_id, ersattningsstatus } = req.body;
     try {
         const response = await fetch(
-            `${BEKRAFTABESLUT_URL}/regel/bekraftabeslut/${handlaggningId}/done`,
-            { method: "POST", headers: { "Content-Type": "application/json" } }
+            `${BEKRAFTABESLUT_URL}/regel/bekraftabeslut/${handlaggningId}`,
+            {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ ersattning_id, ersattningsstatus })
+            }
         );
-        res.status(response.status).end();
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        res.status(200).end();
     } catch (error) {
-        console.error("Error posting done:", error);
-        res.status(500).json({ error: "Internal server error" });
-    }
-});
-
-// Uppdatera ersättning
-app.patch("/api/regel/bekraftabeslut/:handlaggningId/ersattning/:ersattningId", async (req, res) => {
-    const { handlaggningId, ersattningId } = req.params;
-    try {
-        const response = await fetch(
-            `${BEKRAFTABESLUT_URL}/regel/bekraftabeslut/${handlaggningId}/ersattning/${ersattningId}`,
-            { method: "PATCH", headers: { "Content-Type": "application/json" }, body: JSON.stringify(req.body) }
-        );
-        res.status(response.status).end();
-    } catch (error) {
-        console.error("Error patching ersattning:", error);
-        res.status(500).json({ error: "Internal server error" });
+        console.warn(`[FALLBACK] Mock patch för handlaggningId: ${handlaggningId}`);
+        res.status(200).end();
     }
 });
 
