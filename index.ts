@@ -1,7 +1,6 @@
 import express from "express";
 import { fileURLToPath } from "node:url";
 import path from "path";
-import { getMockBeslutsdata } from "./utils/mockDataService.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -43,8 +42,8 @@ app.get("/api/regel/bekraftabeslut/:handlaggningId", async (req, res) => {
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         res.status(response.status).json(await response.json());
     } catch (error) {
-        console.warn(`[FALLBACK] Using mock data for handlaggningId: ${handlaggningId}`);
-        res.json(getMockBeslutsdata(handlaggningId));
+        console.error(`Error fetching decision data for handlaggningId ${handlaggningId}:`, error);
+        res.status(500).json({ error: "Internal server error", message: error instanceof Error ? error.message : String(error) });
     }
 });
 
