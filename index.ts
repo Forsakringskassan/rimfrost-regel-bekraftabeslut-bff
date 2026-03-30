@@ -8,7 +8,7 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 9003;
-const BEKRAFTABESLUT_URL = process.env.BEKRAFTABESLUT_URL || "http://localhost:8891";
+const BE_BEKRAFTABESLUT_URL = process.env.BE_BEKRAFTABESLUT_URL || "http://localhost:8891";
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -38,7 +38,7 @@ app.get("/api/regel/bekraftabeslut/:handlaggningId", async (req, res) => {
     const { handlaggningId } = req.params;
     try {
         const response = await fetch(
-            `${BEKRAFTABESLUT_URL}/regel/bekraftabeslut/${handlaggningId}`
+            `${BE_BEKRAFTABESLUT_URL}/regel/bekraftabeslut/${handlaggningId}`
         );
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         res.status(response.status).json(await response.json());
@@ -54,7 +54,7 @@ app.patch("/api/regel/bekraftabeslut/:handlaggningId", async (req, res) => {
     const { ersattning_id, ersattningsstatus } = req.body;
     try {
         const response = await fetch(
-            `${BEKRAFTABESLUT_URL}/regel/bekraftabeslut/${handlaggningId}`,
+            `${BE_BEKRAFTABESLUT_URL}/regel/bekraftabeslut/${handlaggningId}`,
             {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
