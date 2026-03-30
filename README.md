@@ -1,112 +1,123 @@
-# Micro Frontend BFF Template
+# Rimfrost Regel Bekrafta Beslut BFF
 
-En template för Backend-For-Frontend (BFF) server som fungerar som mellanlager mellan en micro frontend och backend-API:er.
+Backend for Frontend for bekrafta beslut-regeln.
 
-## 🚀 Features
+Denna service exponerar API-endpoints som frontend använder och proxar anrop mot backend-tjansten for bekrafta beslut.
 
-- **Express-baserad BFF** - Snabb och lätt Node.js server
-- **TypeScript** - Fullt typad utvecklingsupplevelse
-- **Hot Reload** - Automatisk omstart vid kodändringar under utveckling
-- **CORS-hantering** - Färdigkonfigurerat för frontend-anrop
-- **Request logging** - Inbyggd loggning av alla requests
-- **Data transformation** - Exempel på hur man transformerar backend-data (snake_case → camelCase)
-- **Error handling** - Robust felhantering och logging
-- **ESLint & Prettier** - Kodkvalitet och formatering
+## Features
 
-## 📋 Förutsättningar
+- Express-baserad BFF i TypeScript
+- Request logging for alla inkommande anrop
+- CORS med stod for `GET`, `PATCH` och `OPTIONS`
+- Health endpoint for runtime-checks
+- Proxy mot backend for hamtning och bekraftelse av beslut
+- Fallback-beteende for PATCH (returnerar `200` vid backendfel)
 
-- Node.js 24+ (eller justera `@tsconfig/node24` i package.json)
-- npm eller annan pakethanterare
+## Forutsattningar
 
-## 🔧 Kom igång
+- Node.js 24+
+- npm
 
-1. **Använd templaten**
-   - Klicka på "Use this template" på GitHub
-   - Skapa ditt nya repository
+## Kom igang
 
-2. **Installera beroenden**
-   ```bash
-   npm install
-   ```
-
-3. **Konfigurera miljövariabler**
-   ```bash
-   # Kopiera .env.example till .env
-   cp .env.example .env
-   
-   # Redigera .env med dina värden
-   ```
-
-4. **Starta utvecklingsserver**
-   ```bash
-   npm run dev
-   ```
-
-   Servern startar på `http://localhost:9002` (eller din konfigurerade PORT)
-
-## 📁 Projektstruktur
-
-```
-├── index.ts                      # Huvudfil med Express-server och routes
-├── utils/
-│   └── transformBackendResponse.ts  # Dataomvandlingsfunktioner
-├── package.json                  # Projektberoenden och scripts
-├── tsconfig.json                 # TypeScript-konfiguration
-├── eslint.config.js              # ESLint-regler
-└── .env.example                  # Exempel på miljövariabler
-```
-
-## 📜 Tillgängliga scripts
+1. Installera beroenden:
 
 ```bash
-npm run dev          # Starta dev-server med hot reload
-npm run build        # Bygg TypeScript till JavaScript
-npm start            # Starta produktionsserver (kräver build först)
-npm run type-check   # Kontrollera TypeScript-typer utan att bygga
-npm run lint         # Kör ESLint
-npm run lint:fix     # Fixa ESLint-problem automatiskt
-npm run format       # Formatera kod med Prettier
-npm run format:check # Kontrollera kodformatering
+npm install
 ```
 
-## 🌐 API Endpoints
+2. Skapa `.env` (du kan utga fran `.env.example`) och satt variabler:
 
-### Health Check
+```env
+PORT=9003
+BE_BEKRAFTABESLUT_URL=http://localhost:8891
 ```
-GET /api/health
+
+3. Starta utvecklingsserver:
+
+```bash
+npm run dev
 ```
-Returnerar serverstatus
 
+Servern startar pa `http://localhost:9003` om `PORT` inte satts.
 
-## 🔒 Miljövariabler
+## Scripts
 
-| Variabel | Beskrivning | Default |
-|----------|-------------|---------|
-| `PORT` | Port som BFF-servern lyssnar på | `9002` |
-| `BACKEND_BASE_URL` | Bas-URL till backend-API | `http://localhost:8890` |
+- `npm run dev` - Startar med hot reload och lasning av `.env`
+- `npm run build` - Bygger TypeScript till `dist/`
+- `npm run start` - Startar byggd applikation med `.env`
+- `npm run type-check` - TypeScript-kontroll utan build
+- `npm run lint` - Kor ESLint
+- `npm run lint:fix` - Fixa lint-fel automatiskt
+- `npm run format` - Formatera med Prettier
+- `npm run format:check` - Verifiera formatering
 
-## 🚢 Deployment
+## API Endpoints
 
-1. Bygg projektet:
-   ```bash
-   npm run build
-   ```
+### `GET /api/health`
 
-2. Sätt miljövariabler i din deployment-miljö
+Returnerar status:
 
-3. Starta servern:
-   ```bash
-   npm start
-   ```
+```json
+{
+  "status": "ok",
+  "timestamp": "2026-03-30T12:34:56.789Z"
+}
+```
 
-## 💡 Tips
+### `GET /api/regel/bekraftabeslut/:handlaggningId`
 
-- **Development**: Använd `npm run dev` för snabb utveckling med auto-reload
-- **Type Safety**: Definiera TypeScript-interfaces för din data i separata filer
-- **Error Logging**: Överväg att lägga till ett logging-library i produktion (t.ex. Winston, Pino)
-- **Validation**: Lägg till request/response validation (t.ex. Zod, Joi)
-- **Testing**: Lägg till test-framework (t.ex. Jest, Vitest)
+Hamtar beslutsdata fran backend:
 
-## 📝 License
+`GET {BE_BEKRAFTABESLUT_URL}/regel/bekraftabeslut/:handlaggningId`
+
+Felhantering:
+
+- Returnerar `500` vid backendfel eller kommunikationsfel
+
+### `PATCH /api/regel/bekraftabeslut/:handlaggningId`
+
+Skickar bekraftelse till backend med body:
+
+```json
+{
+  "ersattning_id": "...",
+  "ersattningsstatus": "..."
+}
+```
+
+Anropar:
+
+`PATCH {BE_BEKRAFTABESLUT_URL}/regel/bekraftabeslut/:handlaggningId`
+
+Felhantering:
+
+- Vid backendfel loggas fallback-varning och endpointen svarar med `200`
+
+## Miljovariabler
+
+| Variabel | Beskrivning | Default i kod |
+|----------|-------------|----------------|
+| `PORT` | Port som servern lyssnar pa | `9003` |
+| `BE_BEKRAFTABESLUT_URL` | Bas-URL till backend for bekrafta beslut | `http://localhost:8891` |
+
+## Projektstruktur
+
+```
+rimfrost-regel-bekraftabeslut-bff/
+|- index.ts
+|- package.json
+|- tsconfig.json
+|- eslint.config.js
+|- .env.example
+```
+
+## Implementation Notes
+
+- Aktiva routes finns i `index.ts`.
+- Nuvarande `.env.example` anvander template-namn (`BACKEND_BASE_URL`) medan koden laser `BE_BEKRAFTABESLUT_URL`.
+- For korrekt drift ska `BE_BEKRAFTABESLUT_URL` finnas i din `.env`.
+
+## License
 
 ISC
