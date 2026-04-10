@@ -1,9 +1,5 @@
-import express from "express";
-import { fileURLToPath } from "node:url";
-import path from "path";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+import { transformBackendResponse } from '#utils/transformBackendResponse.js';
+import express from 'express';
 
 const app = express();
 const PORT = process.env.PORT || 9003;
@@ -40,7 +36,8 @@ app.get("/api/regel/bekraftabeslut/:handlaggningId", async (req, res) => {
             `${BE_BEKRAFTABESLUT_URL}/regel/bekraftabeslut/${handlaggningId}`
         );
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
-        res.status(response.status).json(await response.json());
+        const data = await response.json();
+        res.json(transformBackendResponse(data));
     } catch (error) {
         console.error(`Error fetching decision data for handlaggningId ${handlaggningId}:`, error);
         res.status(500).json({ error: "Internal server error", message: error instanceof Error ? error.message : String(error) });
@@ -50,21 +47,50 @@ app.get("/api/regel/bekraftabeslut/:handlaggningId", async (req, res) => {
 // Bekräfta beslut - PATCH enligt OpenAPI
 app.patch("/api/regel/bekraftabeslut/:handlaggningId", async (req, res) => {
     const { handlaggningId } = req.params;
-    const { ersattning_id, ersattningsstatus } = req.body;
+    const { ersattningId, yrkandestatus } = req.body;
+    const patchBody = JSON.stringify({ ersattning_id: ersattningId, yrkandestatus });
     try {
         const response = await fetch(
             `${BE_BEKRAFTABESLUT_URL}/regel/bekraftabeslut/${handlaggningId}`,
             {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ ersattning_id, ersattningsstatus })
+                body: patchBody
             }
         );
-        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        if (!response.ok) {
+            const errorBody = await response.text();
+            console.error(`Backend returned ${response.status}: ${errorBody}`);
+            throw new Error(`HTTP ${response.status}`);
+        }
         res.status(200).end();
     } catch (error) {
-        console.warn(`[FALLBACK] Mock patch för handlaggningId: ${handlaggningId}`);
-        res.status(200).end();
+        console.error(`Error patching decision data for handlaggningId ${handlaggningId}:`, error);
+        res.status(500).json({ error: "Internal server error", message: error instanceof Error ? error.message : String(error) });
+    }
+});
+
+app.post("/api/regel/bekraftabeslut/:handlaggningId/done", async (req, res) => {
+    const { handlaggningId } = req.params;
+    try {
+        const response = await fetch(
+            `${BE_BEKRAFTABESLUT_URL}/regel/bekraftabeslut/${handlaggningId}/done`,
+            {
+                method: "POST",
+                headers: {
+                    ...(req.headers.authorization ? { authorization: req.headers.authorization } : {}),
+                },
+            }
+        );
+        if (!response.ok) {
+            const errorBody = await response.text();
+            console.error(`Backend /done returned ${response.status}: ${errorBody}`);
+            throw new Error(`HTTP ${response.status}`);
+        }
+        res.status(204).end();
+    } catch (error) {
+        console.error(`Error calling /done for handlaggningId ${handlaggningId}:`, error);
+        res.status(500).json({ error: "Internal server error", message: error instanceof Error ? error.message : String(error) });
     }
 });
 
