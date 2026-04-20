@@ -118,6 +118,17 @@ rimfrost-regel-bekraftabeslut-bff/
 - Nuvarande `.env.example` anvander template-namn (`BACKEND_BASE_URL`) medan koden laser `BE_BEKRAFTABESLUT_URL`.
 - For korrekt drift ska `BE_BEKRAFTABESLUT_URL` finnas i din `.env`.
 
+## Docker
+
+```bash
+docker build -t rimfrost-bekraftabeslut-bff .
+docker run -p 9003:9003 \
+  -e BE_BEKRAFTABESLUT_URL=https://bekraftabeslut.internal.example.com \
+  rimfrost-bekraftabeslut-bff
+```
+
+Environment variables are read from the container environment — do **not** bake them into the image.
+
 ## License
 
 ISC
