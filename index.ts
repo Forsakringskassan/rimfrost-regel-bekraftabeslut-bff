@@ -15,7 +15,7 @@ app.use((req, res, next) => {
 
 app.use((req, res, next) => {
     res.header("Access-Control-Allow-Origin", "*");
-    res.header("Access-Control-Allow-Methods", "GET, PATCH, OPTIONS");
+    res.header("Access-Control-Allow-Methods", "GET, POST, PATCH, OPTIONS");
     res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
     if (req.method === "OPTIONS") {
         res.sendStatus(200);
@@ -29,8 +29,8 @@ app.get("/api/health", (req, res) => {
 });
 
 // Hämta beslutsdata
-app.get("/api/regel/bekraftabeslut/:handlaggningId", async (req, res) => {
-    const { handlaggningId } = req.params;
+app.post("/api/regel/bekraftabeslut", async (req, res) => {
+    const { handlaggningId } = req.body;
     try {
         const response = await fetch(
             `${BE_BEKRAFTABESLUT_URL}/regel/bekraftabeslut/${handlaggningId}`
@@ -45,9 +45,8 @@ app.get("/api/regel/bekraftabeslut/:handlaggningId", async (req, res) => {
 });
 
 // Bekräfta beslut - PATCH enligt OpenAPI
-app.patch("/api/regel/bekraftabeslut/:handlaggningId", async (req, res) => {
-    const { handlaggningId } = req.params;
-    const { ersattningId, yrkandestatus } = req.body;
+app.patch("/api/regel/bekraftabeslut", async (req, res) => {
+    const { handlaggningId, ersattningId, yrkandestatus } = req.body;
     const patchBody = JSON.stringify({ ersattning_id: ersattningId, yrkandestatus });
     try {
         const response = await fetch(
@@ -70,8 +69,8 @@ app.patch("/api/regel/bekraftabeslut/:handlaggningId", async (req, res) => {
     }
 });
 
-app.post("/api/regel/bekraftabeslut/:handlaggningId/done", async (req, res) => {
-    const { handlaggningId } = req.params;
+app.post("/api/regel/bekraftabeslut/done", async (req, res) => {
+    const { handlaggningId } = req.body;
     try {
         const response = await fetch(
             `${BE_BEKRAFTABESLUT_URL}/regel/bekraftabeslut/${handlaggningId}/done`,
