@@ -8,7 +8,7 @@ const BE_BEKRAFTABESLUT_URL = process.env.BE_BEKRAFTABESLUT_URL || "http://local
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-app.use((req, res, next) => {
+app.use((req, _res, next) => {
     console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
     next();
 });
@@ -24,8 +24,22 @@ app.use((req, res, next) => {
     }
 });
 
-app.get("/api/health", (req, res) => {
+app.get("/api/health", (_req, res) => {
     res.json({ status: "ok", timestamp: new Date().toISOString() });
+});
+
+app.get("/api/uppgiftsbeskrivning/:uppgiftstyp", async (_req, res) => {
+    const backendUrl = `${BE_BEKRAFTABESLUT_URL}/regel/bekraftabeslut/utokadUppgiftsbeskrivning`;
+    try {
+        const response = await fetch(backendUrl);
+        if (!response.ok) {
+            const errorText = await response.text();
+            return res.status(response.status).json({ error: "Failed to fetch from backend", details: errorText });
+        }
+        res.json(await response.json());
+    } catch (error) {
+        res.status(502).json({ error: "Backend service unavailable", message: error instanceof Error ? error.message : String(error) });
+    }
 });
 
 // Hämta beslutsdata
