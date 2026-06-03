@@ -28,6 +28,21 @@ app.get("/api/health", (req, res) => {
     res.json({ status: "ok", timestamp: new Date().toISOString() });
 });
 
+// Referensdata endpoints - must be registered before /:handlaggningId to avoid route conflict
+const referensdataRoutes = ["avslutstyp", "beslutstyp", "beslutsutfallstyp", "yrkandestatus"];
+for (const path of referensdataRoutes) {
+    app.get(`/api/regel/bekraftabeslut/${path}`, async (_req, res) => {
+        try {
+            const response = await fetch(`${BE_BEKRAFTABESLUT_URL}/regel/bekraftabeslut/${path}`);
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            res.json(await response.json());
+        } catch (error) {
+            console.error(`Error fetching referensdata ${path}:`, error);
+            res.status(500).json({ error: "Internal server error", message: error instanceof Error ? error.message : String(error) });
+        }
+    });
+}
+
 // Hämta beslutsdata
 app.get("/api/regel/bekraftabeslut/:handlaggningId", async (req, res) => {
     const { handlaggningId } = req.params;
@@ -47,15 +62,13 @@ app.get("/api/regel/bekraftabeslut/:handlaggningId", async (req, res) => {
 // Bekräfta beslut - PATCH enligt OpenAPI
 app.patch("/api/regel/bekraftabeslut/:handlaggningId", async (req, res) => {
     const { handlaggningId } = req.params;
-    const { ersattningId, yrkandestatus } = req.body;
-    const patchBody = JSON.stringify({ ersattning_id: ersattningId, yrkandestatus });
     try {
         const response = await fetch(
             `${BE_BEKRAFTABESLUT_URL}/regel/bekraftabeslut/${handlaggningId}`,
             {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
-                body: patchBody
+                body: JSON.stringify(req.body)
             }
         );
         if (!response.ok) {
