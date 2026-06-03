@@ -62,6 +62,15 @@ app.get("/api/regel/bekraftabeslut/:handlaggningId", async (req, res) => {
 // Bekräfta beslut - PATCH enligt OpenAPI
 app.patch("/api/regel/bekraftabeslut/:handlaggningId", async (req, res) => {
     const { handlaggningId } = req.params;
+    const { ersattningar, beslut } = req.body;
+    if (!Array.isArray(ersattningar) || ersattningar.length === 0) {
+        res.status(400).json({ error: "Bad request", message: "ersattningar must be a non-empty array" });
+        return;
+    }
+    if (!beslut || typeof beslut !== "object" || !beslut.avslutstyp || !beslut.beslutstyp || !beslut.beslutsutfall) {
+        res.status(400).json({ error: "Bad request", message: "beslut must include avslutstyp, beslutstyp, and beslutsutfall" });
+        return;
+    }
     try {
         const response = await fetch(
             `${BE_BEKRAFTABESLUT_URL}/regel/bekraftabeslut/${handlaggningId}`,
