@@ -15,7 +15,7 @@ app.use((req, res, next) => {
 
 app.use((req, res, next) => {
     res.header("Access-Control-Allow-Origin", "*");
-    res.header("Access-Control-Allow-Methods", "GET, PATCH, OPTIONS");
+    res.header("Access-Control-Allow-Methods", "GET, POST, PATCH, OPTIONS");
     res.header("Access-Control-Allow-Headers", "Content-Type, Authorization");
     if (req.method === "OPTIONS") {
         res.sendStatus(200);
@@ -44,8 +44,8 @@ for (const path of referensdataRoutes) {
 }
 
 // Hämta beslutsdata
-app.get("/api/regel/bekraftabeslut/:handlaggningId", async (req, res) => {
-    const { handlaggningId } = req.params;
+app.post("/api/regel/bekraftabeslut", async (req, res) => {
+    const { handlaggningId } = req.body;
     try {
         const response = await fetch(
             `${BE_BEKRAFTABESLUT_URL}/regel/bekraftabeslut/${handlaggningId}`
@@ -92,8 +92,8 @@ app.patch("/api/regel/bekraftabeslut/:handlaggningId", async (req, res) => {
     }
 });
 
-app.post("/api/regel/bekraftabeslut/:handlaggningId/done", async (req, res) => {
-    const { handlaggningId } = req.params;
+app.post("/api/regel/bekraftabeslut/done", async (req, res) => {
+    const { handlaggningId } = req.body;
     try {
         const response = await fetch(
             `${BE_BEKRAFTABESLUT_URL}/regel/bekraftabeslut/${handlaggningId}/done`,
