@@ -28,6 +28,21 @@ app.get("/api/health", (req, res) => {
     res.json({ status: "ok", timestamp: new Date().toISOString() });
 });
 
+// Referensdata endpoints - must be registered before /:handlaggningId to avoid route conflict
+const referensdataRoutes = ["avslutstyp", "beslutstyp", "beslutsutfallstyp", "yrkandestatus"];
+for (const path of referensdataRoutes) {
+    app.get(`/api/regel/bekraftabeslut/${path}`, async (_req, res) => {
+        try {
+            const response = await fetch(`${BE_BEKRAFTABESLUT_URL}/regel/bekraftabeslut/${path}`);
+            if (!response.ok) throw new Error(`HTTP ${response.status}`);
+            res.json(await response.json());
+        } catch (error) {
+            console.error(`Error fetching referensdata ${path}:`, error);
+            res.status(500).json({ error: "Internal server error", message: error instanceof Error ? error.message : String(error) });
+        }
+    });
+}
+
 // Hämta beslutsdata
 app.post("/api/regel/bekraftabeslut", async (req, res) => {
     const { handlaggningId } = req.body;
@@ -45,16 +60,24 @@ app.post("/api/regel/bekraftabeslut", async (req, res) => {
 });
 
 // Bekräfta beslut - PATCH enligt OpenAPI
-app.patch("/api/regel/bekraftabeslut", async (req, res) => {
-    const { handlaggningId, ersattningId, yrkandestatus } = req.body;
-    const patchBody = JSON.stringify({ ersattning_id: ersattningId, yrkandestatus });
+app.patch("/api/regel/bekraftabeslut/:handlaggningId", async (req, res) => {
+    const { handlaggningId } = req.params;
+    const { ersattningar, beslut } = req.body;
+    if (!Array.isArray(ersattningar) || ersattningar.length === 0) {
+        res.status(400).json({ error: "Bad request", message: "ersattningar must be a non-empty array" });
+        return;
+    }
+    if (!beslut || typeof beslut !== "object" || !beslut.avslutstyp || !beslut.beslutstyp || !beslut.beslutsutfall) {
+        res.status(400).json({ error: "Bad request", message: "beslut must include avslutstyp, beslutstyp, and beslutsutfall" });
+        return;
+    }
     try {
         const response = await fetch(
             `${BE_BEKRAFTABESLUT_URL}/regel/bekraftabeslut/${handlaggningId}`,
             {
                 method: "PATCH",
                 headers: { "Content-Type": "application/json" },
-                body: patchBody
+                body: JSON.stringify(req.body)
             }
         );
         if (!response.ok) {
