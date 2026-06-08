@@ -92,6 +92,20 @@ app.patch("/api/regel/bekraftabeslut/:handlaggningId", async (req, res) => {
     }
 });
 
+app.get("/api/uppgiftsbeskrivning/:uppgiftstyp", async (_req, res) => {
+    const backendUrl = `${BE_BEKRAFTABESLUT_URL}/regel/bekraftabeslut/utokadUppgiftsbeskrivning`;
+    try {
+        const response = await fetch(backendUrl);
+        if (!response.ok) {
+            const errorText = await response.text();
+            return res.status(response.status).json({ error: "Failed to fetch from backend", details: errorText });
+        }
+        res.json(await response.json());
+    } catch (error) {
+        res.status(502).json({ error: "Backend service unavailable", message: error instanceof Error ? error.message : String(error) });
+    }
+});
+
 app.post("/api/regel/bekraftabeslut/done", async (req, res) => {
     const { handlaggningId } = req.body;
     try {
