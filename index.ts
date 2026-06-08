@@ -92,7 +92,7 @@ app.patch("/api/regel/bekraftabeslut/:handlaggningId", async (req, res) => {
     }
 });
 
-app.get("/api/uppgiftsbeskrivning/:uppgiftstyp", async (_req, res) => {
+app.get("/api/uppgiftsbeskrivning", async (_req, res) => {
     const backendUrl = `${BE_BEKRAFTABESLUT_URL}/regel/bekraftabeslut/utokadUppgiftsbeskrivning`;
     try {
         const response = await fetch(backendUrl);
