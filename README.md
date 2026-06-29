@@ -1,123 +1,73 @@
-# Rimfrost Regel Bekrafta Beslut BFF
+# rimfrost-regel-bekraftabeslut-bff
 
-Backend for Frontend for bekrafta beslut-regeln.
+Backend-for-frontend for the bekräfta beslut rule. Proxies and transforms decision data from the bekraftabeslut backend service.
 
-Denna service exponerar API-endpoints som frontend använder och proxar anrop mot backend-tjansten for bekrafta beslut.
+This project uses Quarkus, the Supersonic Subatomic Java Framework.
 
-## Features
+If you want to learn more about Quarkus, please visit its website: <https://quarkus.io/>.
 
-- Express-baserad BFF i TypeScript
-- Request logging for alla inkommande anrop
-- CORS med stod for `GET`, `PATCH` och `OPTIONS`
-- Health endpoint for runtime-checks
-- Proxy mot backend for hamtning och bekraftelse av beslut
-- Fallback-beteende for PATCH (returnerar `200` vid backendfel)
+## Running the application in dev mode
 
-## Forutsattningar
+You can run your application in dev mode that enables live coding using:
 
-- Node.js 24+
-- npm
-
-## Kom igang
-
-1. Installera beroenden:
-
-```bash
-npm install
+```shell script
+./mvnw compile quarkus:dev
 ```
 
-2. Skapa `.env` (du kan utga fran `.env.example`) och satt variabler:
+> **_NOTE:_** Quarkus now ships with a Dev UI, which is available in dev mode only at <http://localhost:9003/q/dev/>.
 
-```env
-PORT=9003
-BE_BEKRAFTABESLUT_URL=http://localhost:8891
+The application runs on port **9003** by default.
+
+To run the full build locally (mirrors CI, skips Docker):
+
+```shell script
+./mvnw verify -Dquarkus.container-image.build=false
 ```
 
-3. Starta utvecklingsserver:
+## Environment variables
 
-```bash
-npm run dev
+| Variable | Default | Description |
+|---|---|---|
+| `BE_BEKRAFTABESLUT_URL` | `http://localhost:8891` | Base URL for the bekraftabeslut backend |
+| `CORS_ORIGINS` | _(dev: localhost:3000, localhost:3030)_ | Allowed CORS origins — set in production via this env var |
+
+## Packaging and running the application
+
+The application can be packaged using:
+
+```shell script
+./mvnw package
 ```
 
-Servern startar pa `http://localhost:9003` om `PORT` inte satts.
+It produces the `quarkus-run.jar` file in the `target/quarkus-app/` directory.
 
-## Scripts
+The application is now runnable using `java -jar target/quarkus-app/quarkus-run.jar`.
 
-- `npm run dev` - Startar med hot reload och lasning av `.env`
-- `npm run build` - Bygger TypeScript till `dist/`
-- `npm run start` - Startar byggd applikation med `.env`
-- `npm run type-check` - TypeScript-kontroll utan build
-- `npm run lint` - Kor ESLint
-- `npm run lint:fix` - Fixa lint-fel automatiskt
-- `npm run format` - Formatera med Prettier
-- `npm run format:check` - Verifiera formatering
+## Packaging and running as Docker
 
-## API Endpoints
+Build a Docker image _rimfrost/rimfrost-regel-bekraftabeslut-bff:latest_:
 
-### `GET /api/health`
-
-Returnerar status:
-
-```json
-{
-  "status": "ok",
-  "timestamp": "2026-03-30T12:34:56.789Z"
-}
+```shell script
+./mvnw clean package
 ```
 
-### `GET /api/regel/bekraftabeslut/:handlaggningId`
+Launch container:
 
-Hamtar beslutsdata fran backend:
-
-`GET {BE_BEKRAFTABESLUT_URL}/regel/bekraftabeslut/:handlaggningId`
-
-Felhantering:
-
-- Returnerar `500` vid backendfel eller kommunikationsfel
-
-### `PATCH /api/regel/bekraftabeslut/:handlaggningId`
-
-Skickar bekraftelse till backend med body:
-
-```json
-{
-  "ersattning_id": "...",
-  "ersattningsstatus": "..."
-}
+```shell script
+docker run -p 9003:9003 \
+  -e BE_BEKRAFTABESLUT_URL=http://host.docker.internal:8891 \
+  rimfrost/rimfrost-regel-bekraftabeslut-bff
 ```
 
-Anropar:
+## REST endpoints
 
-`PATCH {BE_BEKRAFTABESLUT_URL}/regel/bekraftabeslut/:handlaggningId`
+| Method | Path | Description |
+|---|---|---|
+| `GET` | `/api/health` | Health check |
+| `GET` | `/api/regel/bekraftabeslut/{path}` | Referensdata — `path` is one of `avslutstyp`, `beslutstyp`, `beslutsutfallstyp`, `yrkandestatus` |
+| `POST` | `/api/regel/bekraftabeslut` | Fetch and transform decision data for a `handlaggningId` |
+| `PATCH` | `/api/regel/bekraftabeslut/{handlaggningId}` | Confirm decision |
+| `GET` | `/api/uppgiftsbeskrivning` | Extended task description |
+| `POST` | `/api/regel/bekraftabeslut/done` | Mark task as done — forwards `Authorization` header to backend |
 
-Felhantering:
-
-- Vid backendfel loggas fallback-varning och endpointen svarar med `200`
-
-## Miljovariabler
-
-| Variabel | Beskrivning | Default i kod |
-|----------|-------------|----------------|
-| `PORT` | Port som servern lyssnar pa | `9003` |
-| `BE_BEKRAFTABESLUT_URL` | Bas-URL till backend for bekrafta beslut | `http://localhost:8891` |
-
-## Projektstruktur
-
-```
-rimfrost-regel-bekraftabeslut-bff/
-|- index.ts
-|- package.json
-|- tsconfig.json
-|- eslint.config.js
-|- .env.example
-```
-
-## Implementation Notes
-
-- Aktiva routes finns i `index.ts`.
-- Nuvarande `.env.example` anvander template-namn (`BACKEND_BASE_URL`) medan koden laser `BE_BEKRAFTABESLUT_URL`.
-- For korrekt drift ska `BE_BEKRAFTABESLUT_URL` finnas i din `.env`.
-
-## License
-
-ISC
+Health: <http://localhost:9003/q/health>
