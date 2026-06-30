@@ -1,7 +1,11 @@
 <FindBugsFilter>
-  <!-- Public fields in model/DTO classes are read by Jackson via reflection, not visible to SpotBugs -->
+  <!-- Public fields in model/DTO classes are written/read by Jackson via reflection, not visible to SpotBugs -->
   <Match>
     <Class name="~se\.fk\.github\.bekraftabeslutbff\.model\..*"/>
-    <Bug pattern="URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD"/>
+    <Bug pattern="URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD,UWF_UNWRITTEN_PUBLIC_OR_PROTECTED_FIELD,NP_UNWRITTEN_PUBLIC_OR_PROTECTED_FIELD"/>
+  </Match>
+  <Match>
+    <Class name="se.fk.github.bekraftabeslutbff.BekraftabeslutMapper"/>
+    <Bug pattern="NP_UNWRITTEN_PUBLIC_OR_PROTECTED_FIELD"/>
   </Match>
 </FindBugsFilter>

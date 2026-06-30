@@ -76,7 +76,8 @@ public class BekraftabeslutController
       }
       catch (WebApplicationException e)
       {
-         LOGGER.error("Failed to fetch bekraftabeslut for handlaggningId={}, upstream status={}", body.handlaggningId, e.getResponse().getStatus(), e);
+         LOGGER.error("Failed to fetch bekraftabeslut for handlaggningId={}, upstream status={}", body.handlaggningId,
+               e.getResponse().getStatus(), e);
          return Response.status(e.getResponse().getStatus()).entity(Map.of("error", "Upstream error")).build();
       }
       catch (ProcessingException e)
@@ -108,7 +109,8 @@ public class BekraftabeslutController
       }
       catch (WebApplicationException e)
       {
-         LOGGER.error("Failed to patch bekraftabeslut for handlaggningId={}, upstream status={}", handlaggningId, e.getResponse().getStatus(), e);
+         LOGGER.error("Failed to patch bekraftabeslut for handlaggningId={}, upstream status={}", handlaggningId,
+               e.getResponse().getStatus(), e);
          return Response.status(e.getResponse().getStatus()).entity(Map.of("error", "Upstream error")).build();
       }
       catch (ProcessingException e)
@@ -168,7 +170,8 @@ public class BekraftabeslutController
       }
       catch (WebApplicationException e)
       {
-         LOGGER.error("Failed to call /done for handlaggningId={}, upstream status={}", body.handlaggningId, e.getResponse().getStatus(), e);
+         LOGGER.error("Failed to call /done for handlaggningId={}, upstream status={}", body.handlaggningId,
+               e.getResponse().getStatus(), e);
          return Response.status(e.getResponse().getStatus()).entity(Map.of("error", "Upstream error")).build();
       }
       catch (ProcessingException e)
