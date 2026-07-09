@@ -4,8 +4,8 @@ import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
 import jakarta.ws.rs.core.Response;
 import org.eclipse.microprofile.rest.client.inject.RegisterRestClient;
-import se.fk.github.bekraftabeslutbff.model.PatchRequest;
-import se.fk.github.bekraftabeslutbff.model.RawBekraftabeslutResponse;
+import se.fk.github.bekraftabeslutbff.model.BackendPatchRequest;
+import se.fk.rimfrost.regel.bekraftabeslut.openapi.jaxrsspec.controllers.generatedsource.model.GetDataResponse;
 
 @RegisterRestClient(configKey = "bekraftabeslut")
 @Path("/regel/bekraftabeslut")
@@ -20,13 +20,13 @@ public interface BekraftabeslutClient
 
    @GET
    @Path("/{handlaggningId}")
-   RawBekraftabeslutResponse getBekraftabeslut(@PathParam("handlaggningId") String handlaggningId);
+   GetDataResponse getBekraftabeslut(@PathParam("handlaggningId") String handlaggningId);
 
    @PATCH
    @Path("/{handlaggningId}")
    Response patchBekraftabeslut(
          @PathParam("handlaggningId") String handlaggningId,
-         PatchRequest body);
+         BackendPatchRequest body);
 
    @GET
    @Path("/utokadUppgiftsbeskrivning")

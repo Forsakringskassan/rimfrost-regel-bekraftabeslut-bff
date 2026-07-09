@@ -1,6 +1,5 @@
 package se.fk.github.bekraftabeslutbff;
 
-import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
@@ -11,6 +10,7 @@ import org.slf4j.LoggerFactory;
 import org.slf4j.MDC;
 import se.fk.github.bekraftabeslutbff.integration.BekraftabeslutClient;
 import se.fk.github.bekraftabeslutbff.model.*;
+import se.fk.rimfrost.regel.bekraftabeslut.openapi.jaxrsspec.controllers.generatedsource.model.GetDataResponse;
 
 import java.util.Map;
 
@@ -22,17 +22,8 @@ public class BekraftabeslutController
 
    private static final Logger LOGGER = LoggerFactory.getLogger(BekraftabeslutController.class);
 
-   @Inject
    @RestClient
    BekraftabeslutClient bekraftabeslutClient;
-
-   // GET /api/health
-   @GET
-   @Path("/api/health")
-   public Response health()
-   {
-      return Response.ok(Map.of("status", "ok")).build();
-   }
 
    // GET /api/regel/bekraftabeslut/{path} - referensdata (avslutstyp, beslutstyp, beslutsutfallstyp, yrkandestatus)
    @GET
@@ -62,32 +53,31 @@ public class BekraftabeslutController
       }
    }
 
-   // POST /api/regel/bekraftabeslut - fetch decision data
-   @POST
-   @Path("/api/regel/bekraftabeslut")
-   public Response getBekraftabeslut(@Valid BekraftabeslutRequest body)
+   // GET /api/regel/bekraftabeslut/handlaggning/{handlaggningId} - fetch decision data
+   @GET
+   @Path("/api/regel/bekraftabeslut/handlaggning/{handlaggningId}")
+   public Response getBekraftabeslut(@PathParam("handlaggningId") String handlaggningId)
    {
-      MDC.put("handlaggningId", body.handlaggningId);
+      MDC.put("handlaggningId", handlaggningId);
       try
       {
-         RawBekraftabeslutResponse raw = bekraftabeslutClient.getBekraftabeslut(body.handlaggningId);
-         BekraftabeslutResponse result = BekraftabeslutMapper.transform(raw);
+         GetDataResponse result = bekraftabeslutClient.getBekraftabeslut(handlaggningId);
          return Response.ok(result).build();
       }
       catch (WebApplicationException e)
       {
-         LOGGER.error("Failed to fetch bekraftabeslut for handlaggningId={}, upstream status={}", body.handlaggningId,
+         LOGGER.error("Failed to fetch bekraftabeslut for handlaggningId={}, upstream status={}", handlaggningId,
                e.getResponse().getStatus(), e);
          return Response.status(e.getResponse().getStatus()).entity(Map.of("error", "Upstream error")).build();
       }
       catch (ProcessingException e)
       {
-         LOGGER.error("Failed to fetch bekraftabeslut for handlaggningId={}, backend unreachable", body.handlaggningId, e);
+         LOGGER.error("Failed to fetch bekraftabeslut for handlaggningId={}, backend unreachable", handlaggningId, e);
          return Response.status(502).entity(Map.of("error", "Backend unavailable")).build();
       }
       catch (Exception e)
       {
-         LOGGER.error("Failed to fetch bekraftabeslut for handlaggningId={}", body.handlaggningId, e);
+         LOGGER.error("Failed to fetch bekraftabeslut for handlaggningId={}", handlaggningId, e);
          return Response.status(500).entity(Map.of("error", "Internal server error")).build();
       }
       finally
@@ -104,7 +94,12 @@ public class BekraftabeslutController
       MDC.put("handlaggningId", handlaggningId);
       try
       {
-         Response backendResponse = bekraftabeslutClient.patchBekraftabeslut(handlaggningId, body);
+         BackendPatchRequest backendBody = new BackendPatchRequest(
+               body.ersattningar().stream()
+                     .map(e -> new BackendUpdateErsattning(e.getErsattningId().toString(), e.getYrkandestatus()))
+                     .toList(),
+               body.beslut());
+         Response backendResponse = bekraftabeslutClient.patchBekraftabeslut(handlaggningId, backendBody);
          return Response.status(backendResponse.getStatus()).build();
       }
       catch (WebApplicationException e)
@@ -162,26 +157,26 @@ public class BekraftabeslutController
    @Path("/api/regel/bekraftabeslut/done")
    public Response done(@Valid BekraftabeslutRequest body, @HeaderParam("Authorization") String authorization)
    {
-      MDC.put("handlaggningId", body.handlaggningId);
+      MDC.put("handlaggningId", body.handlaggningId());
       try
       {
-         bekraftabeslutClient.postDone(body.handlaggningId, authorization);
+         bekraftabeslutClient.postDone(body.handlaggningId(), authorization);
          return Response.status(204).build();
       }
       catch (WebApplicationException e)
       {
-         LOGGER.error("Failed to call /done for handlaggningId={}, upstream status={}", body.handlaggningId,
+         LOGGER.error("Failed to call /done for handlaggningId={}, upstream status={}", body.handlaggningId(),
                e.getResponse().getStatus(), e);
          return Response.status(e.getResponse().getStatus()).entity(Map.of("error", "Upstream error")).build();
       }
       catch (ProcessingException e)
       {
-         LOGGER.error("Failed to call /done for handlaggningId={}, backend unreachable", body.handlaggningId, e);
+         LOGGER.error("Failed to call /done for handlaggningId={}, backend unreachable", body.handlaggningId(), e);
          return Response.status(502).entity(Map.of("error", "Backend unavailable")).build();
       }
       catch (Exception e)
       {
-         LOGGER.error("Failed to call /done for handlaggningId={}", body.handlaggningId, e);
+         LOGGER.error("Failed to call /done for handlaggningId={}", body.handlaggningId(), e);
          return Response.status(500).entity(Map.of("error", "Internal server error")).build();
       }
       finally

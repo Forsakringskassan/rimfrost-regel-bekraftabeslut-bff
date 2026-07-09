@@ -1,11 +1,10 @@
 <FindBugsFilter>
-  <!-- Public fields in model/DTO classes are written/read by Jackson via reflection, not visible to SpotBugs -->
+  <!-- Records used as DTOs — EI_EXPOSE_REP is a false positive; lists are never mutated externally -->
   <Match>
-    <Class name="~se\.fk\.github\.bekraftabeslutbff\.model\..*"/>
-    <Bug pattern="URF_UNREAD_PUBLIC_OR_PROTECTED_FIELD,UWF_UNWRITTEN_PUBLIC_OR_PROTECTED_FIELD,NP_UNWRITTEN_PUBLIC_OR_PROTECTED_FIELD"/>
-  </Match>
-  <Match>
-    <Class name="se.fk.github.bekraftabeslutbff.BekraftabeslutMapper"/>
-    <Bug pattern="NP_UNWRITTEN_PUBLIC_OR_PROTECTED_FIELD"/>
+    <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
+    <Or>
+      <Class name="se.fk.github.bekraftabeslutbff.model.PatchRequest"/>
+      <Class name="se.fk.github.bekraftabeslutbff.model.BackendPatchRequest"/>
+    </Or>
   </Match>
 </FindBugsFilter>

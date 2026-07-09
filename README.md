@@ -45,10 +45,10 @@ The application is now runnable using `java -jar target/quarkus-app/quarkus-run.
 
 ## Packaging and running as Docker
 
-Build a Docker image _rimfrost/rimfrost-regel-bekraftabeslut-bff:latest_:
+Build a Docker image _rimfrost/rimfrost-regel-bekraftabeslut-bff:latest_ (requires Docker to be running locally):
 
 ```shell script
-./mvnw clean package
+./mvnw package -Dquarkus.container-image.build=true
 ```
 
 Launch container:
@@ -63,11 +63,10 @@ docker run -p 9003:9003 \
 
 | Method | Path | Description |
 |---|---|---|
-| `GET` | `/api/health` | Health check |
 | `GET` | `/api/regel/bekraftabeslut/{path}` | Referensdata — `path` is one of `avslutstyp`, `beslutstyp`, `beslutsutfallstyp`, `yrkandestatus` |
-| `POST` | `/api/regel/bekraftabeslut` | Fetch and transform decision data for a `handlaggningId` |
+| `GET` | `/api/regel/bekraftabeslut/handlaggning/{handlaggningId}` | Fetch and transform decision data |
 | `PATCH` | `/api/regel/bekraftabeslut/{handlaggningId}` | Confirm decision |
 | `GET` | `/api/uppgiftsbeskrivning` | Extended task description |
 | `POST` | `/api/regel/bekraftabeslut/done` | Mark task as done — forwards `Authorization` header to backend |
 
-Health: <http://localhost:9003/q/health>
+Health (readiness + backend connectivity check): <http://localhost:9003/q/health>

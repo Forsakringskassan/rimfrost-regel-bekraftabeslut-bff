@@ -7,3 +7,14 @@ target/
 
 # OS generated files
 .DS_Store
+
+# Eclipse
+.project
+.classpath
+
+# VSCode
+*/settings.json
+.vscode/settings.json
+
+# IntelliJ
+.idea
