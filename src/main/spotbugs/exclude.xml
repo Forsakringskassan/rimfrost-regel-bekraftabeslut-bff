@@ -2,9 +2,6 @@
   <!-- Records used as DTOs — EI_EXPOSE_REP is a false positive; lists are never mutated externally -->
   <Match>
     <Bug pattern="EI_EXPOSE_REP,EI_EXPOSE_REP2"/>
-    <Or>
-      <Class name="se.fk.github.bekraftabeslutbff.model.PatchRequest"/>
-      <Class name="se.fk.github.bekraftabeslutbff.model.BackendPatchRequest"/>
-    </Or>
+    <Class name="se.fk.github.bekraftabeslutbff.model.PatchRequest"/>
   </Match>
 </FindBugsFilter>

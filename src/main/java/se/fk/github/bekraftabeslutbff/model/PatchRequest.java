@@ -7,4 +7,4 @@ import se.fk.rimfrost.regel.bekraftabeslut.openapi.jaxrsspec.controllers.generat
 
 import java.util.List;
 
-public record PatchRequest(@NotNull @NotEmpty @Valid List<UpdateErsattning> ersattningar, @Valid @NotNull Beslut beslut) {}
+public record PatchRequest(@NotNull @NotEmpty @Valid List<UpdateErsattning>ersattningar,@Valid @NotNull Beslut beslut){}

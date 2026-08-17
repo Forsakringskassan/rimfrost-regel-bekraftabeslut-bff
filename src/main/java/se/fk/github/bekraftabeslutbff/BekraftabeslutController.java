@@ -11,8 +11,12 @@ import org.slf4j.MDC;
 import se.fk.github.bekraftabeslutbff.integration.BekraftabeslutClient;
 import se.fk.github.bekraftabeslutbff.model.*;
 import se.fk.rimfrost.regel.bekraftabeslut.openapi.jaxrsspec.controllers.generatedsource.model.GetDataResponse;
+import se.fk.rimfrost.regel.bekraftabeslut.openapi.jaxrsspec.controllers.generatedsource.model.PatchDataRequest;
+import se.fk.rimfrost.regel.bekraftabeslut.openapi.jaxrsspec.controllers.generatedsource.model.Referensdata;
 
+import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 
 @Path("")
 @Produces(MediaType.APPLICATION_JSON)
@@ -33,7 +37,24 @@ public class BekraftabeslutController
       LOGGER.debug("GET /api/regel/bekraftabeslut/{}", path);
       try
       {
-         Object result = bekraftabeslutClient.getReferensdata(path);
+         List<Referensdata> result;
+         switch (path)
+         {
+            case "avslutstyp":
+               result = bekraftabeslutClient.getAvslutstyp();
+               break;
+            case "beslutstyp":
+               result = bekraftabeslutClient.getBeslutstyp();
+               break;
+            case "beslutsutfallstyp":
+               result = bekraftabeslutClient.getBeslutsutfallstyp();
+               break;
+            case "yrkandestatus":
+               result = bekraftabeslutClient.getYrkandestatus();
+               break;
+            default:
+               return Response.status(404).entity(Map.of("error", "Unknown referensdata type")).build();
+         }
          return Response.ok(result).build();
       }
       catch (WebApplicationException e)
@@ -61,7 +82,7 @@ public class BekraftabeslutController
       MDC.put("handlaggningId", handlaggningId);
       try
       {
-         GetDataResponse result = bekraftabeslutClient.getBekraftabeslut(handlaggningId);
+         GetDataResponse result = bekraftabeslutClient.regelBekraftabeslutHandlaggningIdGet(UUID.fromString(handlaggningId));
          return Response.ok(result).build();
       }
       catch (WebApplicationException e)
@@ -94,13 +115,12 @@ public class BekraftabeslutController
       MDC.put("handlaggningId", handlaggningId);
       try
       {
-         BackendPatchRequest backendBody = new BackendPatchRequest(
-               body.ersattningar().stream()
-                     .map(e -> new BackendUpdateErsattning(e.getErsattningId().toString(), e.getYrkandestatus()))
-                     .toList(),
-               body.beslut());
-         Response backendResponse = bekraftabeslutClient.patchBekraftabeslut(handlaggningId, backendBody);
-         return Response.status(backendResponse.getStatus()).build();
+         PatchDataRequest backendBody = new PatchDataRequest(
+               body.ersattningar(),
+               new se.fk.rimfrost.regel.bekraftabeslut.openapi.jaxrsspec.controllers.generatedsource.model.Beslut(
+                     body.beslut().avslutstyp(), body.beslut().beslutstyp(), body.beslut().beslutsutfall()));
+         bekraftabeslutClient.regelBekraftabeslutHandlaggningIdPatch(UUID.fromString(handlaggningId), backendBody);
+         return Response.status(200).build();
       }
       catch (WebApplicationException e)
       {

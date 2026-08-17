@@ -109,6 +109,19 @@ class BekraftabeslutControllerTest
             .body("error", equalTo("Upstream error"));
    }
 
+   @Test
+   void getBekraftabeslut_returns404_whenBackendReturns404()
+   {
+      WireMockTestResource.getServer().stubFor(get(urlEqualTo("/regel/bekraftabeslut/" + HANDLAGGNING_UUID))
+            .willReturn(aResponse().withStatus(404)));
+
+      given()
+            .when()
+            .get("/api/regel/bekraftabeslut/handlaggning/" + HANDLAGGNING_UUID)
+            .then()
+            .statusCode(404);
+   }
+
    // --- PATCH /api/regel/bekraftabeslut/{handlaggningId} ---
 
    @Test
@@ -133,6 +146,30 @@ class BekraftabeslutControllerTest
             .patch("/api/regel/bekraftabeslut/" + HANDLAGGNING_UUID)
             .then()
             .statusCode(200);
+   }
+
+   @Test
+   void patchBekraftabeslut_returns404_whenBackendReturns404()
+   {
+      WireMockTestResource.getServer().stubFor(patch(urlEqualTo("/regel/bekraftabeslut/" + HANDLAGGNING_UUID))
+            .willReturn(aResponse().withStatus(404)));
+
+      given()
+            .contentType(ContentType.JSON)
+            .body("""
+                  {
+                      "ersattningar": [{"ersattning_id": "%s", "yrkandestatus": "BEVILJAD"}],
+                      "beslut": {
+                          "avslutstyp": "AVSLUTAD",
+                          "beslutstyp": "HELT_NEDSATT",
+                          "beslutsutfall": "BEVILJAD"
+                      }
+                  }
+                  """.formatted(ERSATTNING_UUID))
+            .when()
+            .patch("/api/regel/bekraftabeslut/" + HANDLAGGNING_UUID)
+            .then()
+            .statusCode(404);
    }
 
    @Test
