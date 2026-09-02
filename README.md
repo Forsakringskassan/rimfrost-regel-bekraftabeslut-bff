@@ -1,112 +1,72 @@
-# Micro Frontend BFF Template
+# rimfrost-regel-bekraftabeslut-bff
 
-En template för Backend-For-Frontend (BFF) server som fungerar som mellanlager mellan en micro frontend och backend-API:er.
+Backend-for-frontend for the bekräfta beslut rule. Proxies and transforms decision data from the bekraftabeslut backend service.
 
-## 🚀 Features
+This project uses Quarkus, the Supersonic Subatomic Java Framework.
 
-- **Express-baserad BFF** - Snabb och lätt Node.js server
-- **TypeScript** - Fullt typad utvecklingsupplevelse
-- **Hot Reload** - Automatisk omstart vid kodändringar under utveckling
-- **CORS-hantering** - Färdigkonfigurerat för frontend-anrop
-- **Request logging** - Inbyggd loggning av alla requests
-- **Data transformation** - Exempel på hur man transformerar backend-data (snake_case → camelCase)
-- **Error handling** - Robust felhantering och logging
-- **ESLint & Prettier** - Kodkvalitet och formatering
+If you want to learn more about Quarkus, please visit its website: <https://quarkus.io/>.
 
-## 📋 Förutsättningar
+## Running the application in dev mode
 
-- Node.js 24+ (eller justera `@tsconfig/node24` i package.json)
-- npm eller annan pakethanterare
+You can run your application in dev mode that enables live coding using:
 
-## 🔧 Kom igång
-
-1. **Använd templaten**
-   - Klicka på "Use this template" på GitHub
-   - Skapa ditt nya repository
-
-2. **Installera beroenden**
-   ```bash
-   npm install
-   ```
-
-3. **Konfigurera miljövariabler**
-   ```bash
-   # Kopiera .env.example till .env
-   cp .env.example .env
-   
-   # Redigera .env med dina värden
-   ```
-
-4. **Starta utvecklingsserver**
-   ```bash
-   npm run dev
-   ```
-
-   Servern startar på `http://localhost:9002` (eller din konfigurerade PORT)
-
-## 📁 Projektstruktur
-
-```
-├── index.ts                      # Huvudfil med Express-server och routes
-├── utils/
-│   └── transformBackendResponse.ts  # Dataomvandlingsfunktioner
-├── package.json                  # Projektberoenden och scripts
-├── tsconfig.json                 # TypeScript-konfiguration
-├── eslint.config.js              # ESLint-regler
-└── .env.example                  # Exempel på miljövariabler
+```shell script
+./mvnw compile quarkus:dev
 ```
 
-## 📜 Tillgängliga scripts
+> **_NOTE:_** Quarkus now ships with a Dev UI, which is available in dev mode only at <http://localhost:9003/q/dev/>.
 
-```bash
-npm run dev          # Starta dev-server med hot reload
-npm run build        # Bygg TypeScript till JavaScript
-npm start            # Starta produktionsserver (kräver build först)
-npm run type-check   # Kontrollera TypeScript-typer utan att bygga
-npm run lint         # Kör ESLint
-npm run lint:fix     # Fixa ESLint-problem automatiskt
-npm run format       # Formatera kod med Prettier
-npm run format:check # Kontrollera kodformatering
+The application runs on port **9003** by default.
+
+To run the full build locally (mirrors CI, skips Docker):
+
+```shell script
+./mvnw verify -Dquarkus.container-image.build=false
 ```
 
-## 🌐 API Endpoints
+## Environment variables
 
-### Health Check
+| Variable | Default | Description |
+|---|---|---|
+| `BE_BEKRAFTABESLUT_URL` | `http://localhost:8891` | Base URL for the bekraftabeslut backend |
+| `CORS_ORIGINS` | _(dev: localhost:3000, localhost:3030)_ | Allowed CORS origins — set in production via this env var |
+
+## Packaging and running the application
+
+The application can be packaged using:
+
+```shell script
+./mvnw package
 ```
-GET /api/health
+
+It produces the `quarkus-run.jar` file in the `target/quarkus-app/` directory.
+
+The application is now runnable using `java -jar target/quarkus-app/quarkus-run.jar`.
+
+## Packaging and running as Docker
+
+Build a Docker image _rimfrost/rimfrost-regel-bekraftabeslut-bff:latest_ (requires Docker to be running locally):
+
+```shell script
+./mvnw package -Dquarkus.container-image.build=true
 ```
-Returnerar serverstatus
 
+Launch container:
 
-## 🔒 Miljövariabler
+```shell script
+docker run -p 9003:9003 \
+  -e BE_BEKRAFTABESLUT_URL=http://host.docker.internal:8891 \
+  rimfrost/rimfrost-regel-bekraftabeslut-bff
+```
 
-| Variabel | Beskrivning | Default |
-|----------|-------------|---------|
-| `PORT` | Port som BFF-servern lyssnar på | `9002` |
-| `BACKEND_BASE_URL` | Bas-URL till backend-API | `http://localhost:8890` |
+## REST endpoints
 
-## 🚢 Deployment
+| Method | Path | Description |
+|---|---|---|
+| `GET` | `/api/regel/bekraftabeslut/{path}` | Referensdata — `path` is one of `avslutstyp`, `beslutstyp`, `beslutsutfallstyp`, `yrkandestatus` |
+| `GET` | `/api/regel/bekraftabeslut/handlaggning/{handlaggningId}` | Fetch and transform decision data |
+| `PATCH` | `/api/regel/bekraftabeslut/{handlaggningId}` | Confirm decision |
+| `GET` | `/api/uppgiftsbeskrivning` | Extended task description |
+| `POST` | `/api/regel/bekraftabeslut/done` | Mark task as done — forwards `Authorization` header to backend |
 
-1. Bygg projektet:
-   ```bash
-   npm run build
-   ```
-
-2. Sätt miljövariabler i din deployment-miljö
-
-3. Starta servern:
-   ```bash
-   npm start
-   ```
-
-## 💡 Tips
-
-- **Development**: Använd `npm run dev` för snabb utveckling med auto-reload
-- **Type Safety**: Definiera TypeScript-interfaces för din data i separata filer
-- **Error Logging**: Överväg att lägga till ett logging-library i produktion (t.ex. Winston, Pino)
-- **Validation**: Lägg till request/response validation (t.ex. Zod, Joi)
-- **Testing**: Lägg till test-framework (t.ex. Jest, Vitest)
-
-## 📝 License
-
-ISC
+Health (readiness + backend connectivity check): <http://localhost:9003/q/health>
