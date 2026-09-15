@@ -2,6 +2,13 @@
 
 Changelog of rimfrost-regel-bekraftabeslut-bff.
 
+## 0.0.2 (2026-09-15)
+
+### Bug Fixes
+
+-  drop redundant prod-profile override, let the base default apply ([f3fca](https://github.com/Forsakringskassan/rimfrost-regel-bekraftabeslut-bff/commit/f3fcaa2bbb40563) LisaWedin_Ductus)  
+-  give CORS_ORIGINS a default in the prod profile ([08bb9](https://github.com/Forsakringskassan/rimfrost-regel-bekraftabeslut-bff/commit/08bb93e9d96ced7) LisaWedin_Ductus)  
+
 ## 0.0.1 (2026-09-02)
 
 ### Features
