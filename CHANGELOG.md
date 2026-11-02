@@ -2,6 +2,21 @@
 
 Changelog of rimfrost-regel-bekraftabeslut-bff.
 
+## 0.0.3 (2026-10-30)
+
+### Bug Fixes
+
+-  replace secrets with permissions in CI/release workflows ([3c043](https://github.com/Forsakringskassan/rimfrost-regel-bekraftabeslut-bff/commit/3c043f4dfee45ee) Ulf Slunga)  
+-  **deps**  update dependency se.fk.rimfrost.regel.bekraftabeslut.openapi:rimfrost-regel-bekraftabeslut-openapi-jaxrs-spec to v1.1.2 ([14c07](https://github.com/Forsakringskassan/rimfrost-regel-bekraftabeslut-bff/commit/14c07ff2526088e) renovate[bot])  
+
+### Dependency updates
+
+- update node.js to v24.22.2 ([3223c](https://github.com/Forsakringskassan/rimfrost-regel-bekraftabeslut-bff/commit/3223c5954ca5071) renovate[bot])  
+- update node.js to v24.22.1 ([ddce8](https://github.com/Forsakringskassan/rimfrost-regel-bekraftabeslut-bff/commit/ddce8907a5fef1a) renovate[bot])  
+- pin forsakringskassan/.github action to cbd74f1 ([ae1ad](https://github.com/Forsakringskassan/rimfrost-regel-bekraftabeslut-bff/commit/ae1adf0766224ee) renovate[bot])  
+- update node.js to v24.21.0 ([3d880](https://github.com/Forsakringskassan/rimfrost-regel-bekraftabeslut-bff/commit/3d88079cf8652a5) renovate[bot])  
+## rimfrost-1_2 (2026-09-15)
+
 ## 0.0.2 (2026-09-15)
 
 ### Bug Fixes
