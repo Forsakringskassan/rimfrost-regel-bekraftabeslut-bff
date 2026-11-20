@@ -16,6 +16,7 @@ kännedom om regeltjänstens kontrakt.
 |---|---|
 | Bekräfta Beslut Frontend | Anropar BFF:n för att hämta beslutsunderlag och bekräfta beslut |
 | Bekräftabeslut-regeltjänsten | Bakomliggande tjänst som äger beslutsunderlag och ersättningsdata |
+| ILogg (via Kafka-topic `informationsaccess`) | Tar emot informationsaccess-event om vilken data som visats |
 
 ---
 
@@ -53,6 +54,21 @@ kännedom om regeltjänstens kontrakt.
 - **BEKB-FR-05.2** BFF:n ska validera att handläggnings-id inte är tomt innan vidare
   behandling.
 
+### BEKB-FR-07 — Informationsaccess vid hämtning av beslutsunderlag
+
+- **BEKB-FR-07.1** Vid hämtning av beslutsunderlag (BEKB-FR-01.1) ska BFF:n publicera ett
+  informationsaccess-event via ILogg (FBFF-FR-05). Eventets `visadInformation` ska vara den
+  data som skickas till frontend.
+- **BEKB-FR-07.2** Eventet ska ange användare, uppgift, regel och regelversion från
+  regeltjänstens informationsaccessdata, handläggningsid, tidpunkt, källan
+  `rimfrost-regel-bekraftabeslut-bff` och ett eget id.
+- **BEKB-FR-07.3** Informationsaccessdata ska inte skickas vidare till frontend.
+- **BEKB-FR-07.4** Hämtning av referensdata (BEKB-FR-02), uppgiftsbeskrivning (BEKB-FR-03),
+  bekräftelse av beslut (BEKB-FR-04) och slutförande av handläggning (BEKB-FR-05) ska inte
+  ge något event.
+- **BEKB-FR-07.5** Om eventet inte kan publiceras ska BFF:n returnera ett fel till frontend
+  utan att skicka beslutsunderlaget, så att ingen information visas utan att det loggas.
+
 ### BEKB-FR-06 — Felhantering vid integration mot regeltjänsten
 
 - **BEKB-FR-06.1** Om regeltjänsten svarar med ett felstatus ska BFF:n returnera samma
@@ -84,7 +100,7 @@ kännedom om regeltjänstens kontrakt.
 
 | API | Målgrupp | Specifikationsartefakt |
 |---|---|---|
-| Bekräfta Beslut BFF REST-API | Bekräfta Beslut Frontend | `rimfrost-regel-bekraftabeslut-openapi` |
+| Bekräfta Beslut BFF REST-API | Bekräfta Beslut Frontend | `rimfrost-regel-bekraftabeslut-bff-openapi` |
 | Bekräftabeslut-regeltjänstens API | Denna BFF | `rimfrost-regel-bekraftabeslut-openapi` |
 
 ---
@@ -92,4 +108,5 @@ kännedom om regeltjänstens kontrakt.
 ## Integration med Bekräftabeslut-regeltjänsten
 
 BFF:n är en synkron REST-till-REST-integration mot regeltjänsten. BFF:n lagrar inget
-tillstånd själv och publicerar inga event.
+tillstånd själv. Vid hämtning av beslutsunderlag ska BFF:n publicera ett
+informationsaccess-event på Kafka (BEKB-FR-07).

@@ -1,11 +1,13 @@
-# FKPOC-1475: Refactor bekraftabeslut-bff to use rimfrost-framework-bff
+# FKPOC-1475: Refactor bekraftabeslut-bff to use rimfrost-framework-bff and implement BEKB-FR-07
 
 ## Goal
 
-Replace hand-rolled exception handling, MDC management, and Authorization header
-forwarding in `rimfrost-regel-bekraftabeslut-bff` with the shared utilities from
-`rimfrost-framework-bff`, matching the pattern established in
-`rimfrost-regel-rtf-manuell-bff`.
+1. Replace hand-rolled exception handling, MDC management, and Authorization header
+   forwarding in `rimfrost-regel-bekraftabeslut-bff` with the shared utilities from
+   `rimfrost-framework-bff`, matching the pattern established in
+   `rimfrost-regel-rtf-manuell-bff`.
+2. Document service requirements in `docs/krav.md`.
+3. Implement informationsaccess publishing (BEKB-FR-07).
 
 ## Background
 
@@ -18,12 +20,16 @@ forwarding in `rimfrost-regel-bekraftabeslut-bff` with the shared utilities from
 | `OutgoingAuthorizationHeaderFilter` | Manual `@HeaderParam("Authorization")` extraction and passing in `done()` |
 | `UpstreamHealthCheck` | Missing health check |
 
-The error response format (`{"error": "..."}`) and HTTP status codes are identical to what
-the controller currently produces manually, so there is no functional change for callers.
+The backend (`rimfrost-regel-bekraftabeslut`) already wraps its GET response in
+`RegelManuellReadResponse<GetDataResponse>`, which serializes to
+`{ "data": {...}, "informationsaccess": {...} }`. The BFF currently ignores
+`informationsaccess` by deserializing directly to `GetDataResponse`. BEKB-FR-07 requires
+the BFF to extract the informationsaccess data, publish it to ILogg via Kafka, and return
+only `data` to the frontend.
 
 ## Steps
 
-- [ ] **1. Add rimfrost-framework-bff dependency**
+- [x] **1. Add rimfrost-framework-bff dependency**
 
   Add to `pom.xml` under the existing rimfrost dependency:
 
@@ -37,98 +43,120 @@ the controller currently produces manually, so there is no functional change for
 
   Run `mvn test-compile -q` to verify the dependency resolves.
 
-- [ ] **2. Remove manual exception handling from BekraftabeslutController**
+- [x] **2. Remove manual exception handling from BekraftabeslutController**
 
   `GlobalExceptionMapper` (auto-registered by the framework) handles all three exception
   types already caught manually. Remove all try-catch blocks from the five controller
-  methods and let exceptions propagate:
-
-  - `getReferensdata()` — remove try-catch; keep the switch + `Response.ok()`
-  - `getBekraftabeslut()` — remove try-catch-finally; keep the client call + `Response.ok()`
-  - `patchBekraftabeslut()` — remove try-catch-finally; keep the mapping + client call + `Response.status(200).build()`
-  - `getUppgiftsbeskrivning()` — remove try-catch; keep the client call + `Response.ok()`
-  - `done()` — remove try-catch-finally; keep the client call + `Response.status(204).build()`
+  methods and let exceptions propagate.
 
   Also remove the now-unused imports: `WebApplicationException`, `ProcessingException`, `Map`.
 
-  Run `mvn test` and verify all tests pass.
-
-- [ ] **3. Replace manual MDC with LogContext**
+- [x] **3. Replace manual MDC with LogContext**
 
   Three methods use `MDC.put("handlaggningId", ...)/finally MDC.remove(...)`.
-  Replace each with `LogContext.put(...)` in a try-with-resources:
-
-  ```java
-  try (var ignored = LogContext.put("handlaggningId", handlaggningId))
-  {
-      // ...
-  }
-  ```
+  Replace each with `LogContext.put(...)` in a try-with-resources.
 
   Affected methods: `getBekraftabeslut()`, `patchBekraftabeslut()`, `done()`.
 
-  Remove the now-unused `MDC` import; add `se.fk.rimfrost.framework.bff.logging.LogContext`.
+- [x] **4. Remove manual Authorization header forwarding**
 
-  Run `mvn test` and verify all tests pass.
+  `OutgoingAuthorizationHeaderFilter` forwards the `Authorization` header automatically.
+  Remove `@HeaderParam("Authorization") String authorization` from `done()` and
+  `BekraftabeslutClient.postDone()`.
 
-- [ ] **4. Remove manual Authorization header forwarding**
+- [x] **5. Add UpstreamHealthCheck**
 
-  `OutgoingAuthorizationHeaderFilter` (auto-registered by the framework) forwards the
-  `Authorization` header to all outgoing REST client calls automatically.
+  Create `HealthCheckProducer` in `health/` package using
+  `UpstreamHealthCheck.fromConfig("bekraftabeslut-backend", "quarkus.rest-client.bekraftabeslut.url", 2000)`.
 
-  In `BekraftabeslutClient`:
-  - Remove `@HeaderParam("Authorization") String authorization` from `postDone()`
+- [x] **6. Create docs/krav.md**
 
-  In `BekraftabeslutController.done()`:
-  - Remove `@HeaderParam("Authorization") String authorization` from the method signature
-  - Update the `postDone()` call to remove the `authorization` argument
+  Reverse-engineer and document service requirements using prefix `BEKB`.
+  Covers BEKB-FR-01 through BEKB-FR-07 and BEKB-NFR-01/02.
+  Fix `API-gränssnitt` table to reference `rimfrost-regel-bekraftabeslut-bff-openapi`
+  (frontend contract) and `rimfrost-regel-bekraftabeslut-openapi` (backend contract)
+  as separate specs.
 
-  Run `mvn test` and verify all tests pass.
+- [ ] **7. Add backend response model**
 
-- [ ] **5. Add UpstreamHealthCheck**
+  Create two records in `model/`:
 
-  Create `src/main/java/se/fk/github/bekraftabeslutbff/health/HealthCheckProducer.java`:
+  - `BackendInformationsaccess(UUID uppgiftId, UUID regelId, String regelVersion, BackendAnvandare anvandare)`
+  - `BackendAnvandare(String typId, String varde)`
+  - `BackendGetResponse(GetDataResponse data, BackendInformationsaccess informationsaccess)`
 
-  ```java
-  package se.fk.github.bekraftabeslutbff.health;
+  These mirror the `RegelManuellReadResponse` structure already returned by the backend.
 
-  import jakarta.enterprise.context.ApplicationScoped;
-  import jakarta.enterprise.inject.Produces;
-  import org.eclipse.microprofile.health.HealthCheck;
-  import org.eclipse.microprofile.health.Readiness;
-  import se.fk.rimfrost.framework.bff.health.UpstreamHealthCheck;
+- [ ] **8. Update BekraftabeslutClient return type**
 
-  @ApplicationScoped
-  public class HealthCheckProducer
-  {
-      /**
-       * Readiness check that probes the bekraftabeslut backend.
-       */
-      @Readiness
-      @Produces
-      HealthCheck bekraftabeslutHealthCheck()
-      {
-          return UpstreamHealthCheck.fromConfig(
-                  "bekraftabeslut-backend",
-                  "quarkus.rest-client.bekraftabeslut.url",
-                  2000);
-      }
-  }
+  Change `regelBekraftabeslutHandlaggningIdGet()` return type from `GetDataResponse` to
+  `BackendGetResponse` so Jackson deserializes both `data` and `informationsaccess`.
+
+  Run `mvn test-compile -q` to verify.
+
+- [ ] **9. Add Kafka channel config for ILogg**
+
+  Add to `src/main/resources/application.properties`:
+
+  ```properties
+  mp.messaging.outgoing.ilogg-event.connector=smallrye-kafka
+  mp.messaging.outgoing.ilogg-event.topic=informationsaccess
+  mp.messaging.outgoing.ilogg-event.value.serializer=io.quarkus.kafka.client.serialization.ObjectMapperSerializer
   ```
 
+  Run `mvn test-compile -q` to verify.
+
+- [ ] **10. Add InformationsaccessPublisher**
+
+  Create `integration/InformationsaccessPublisher` and
+  `integration/InformationsaccessPublishException` mirroring the rtf-manuell pattern.
+
+  - Inject `ILogg` from `rimfrost-framework-bff`
+  - Build `InformationsaccessEvent` from `BackendInformationsaccess` and `handlaggningId`
+  - Set `kalla` to `"rimfrost-regel-bekraftabeslut-bff"`
+  - Set `visadInformation` to the `data` field (BEKB-FR-07.1)
+  - Throw `InformationsaccessPublishException` if `ILogg.publish()` fails (BEKB-FR-07.5)
+
+  Run `mvn test-compile -q` to verify.
+
+- [ ] **11. Update controller to publish informationsaccess and return only data**
+
+  In `getBekraftabeslut()`:
+  - Change client call to receive `BackendGetResponse`
+  - Map before publishing so no access is logged for data never shown (BEKB-FR-07.3)
+  - Call `informationsaccessPublisher.publish(handlaggningId, response)`
+  - Return `Response.ok(response.data())` — not the full wrapper
+
   Run `mvn test` and verify all tests pass.
+
+- [ ] **12. Add tests for BEKB-FR-07**
+
+  Add to `BekraftabeslutControllerTest`:
+
+  - `getBekraftabeslut_publishesInformationsaccessEvent` — verify ILogg Kafka topic receives
+    an event when GET succeeds (BEKB-FR-07.1)
+  - `getBekraftabeslut_returnsErrorAndDoesNotReturnData_whenPublishFails` — verify that if
+    the Kafka publish fails, no data is returned to the frontend (BEKB-FR-07.5)
+  - `getBekraftabeslut_doesNotForwardInformationsaccessToFrontend` — verify the response
+    body does not contain an `informationsaccess` field (BEKB-FR-07.3)
 
 ## Architectural layers
 
-All changes stay within the existing BFF layer. No new cross-layer dependencies are
-introduced. `rimfrost-framework-bff` is a BFF-layer shared library — the same layer as
-this service.
+All changes stay within the BFF layer. `rimfrost-framework-bff` is a BFF-layer shared
+library. The Kafka channel for ILogg is a new outgoing integration but follows the same
+pattern already established in `rimfrost-regel-rtf-manuell-bff`.
 
 ## Definition of Done
 
-- [ ] All five controller methods free of manual try-catch
-- [ ] All three MDC blocks replaced with `LogContext`
-- [ ] `done()` no longer extracts or forwards `Authorization` manually
-- [ ] `HealthCheckProducer` added
+- [x] All five controller methods free of manual try-catch
+- [x] All three MDC blocks replaced with `LogContext`
+- [x] `done()` no longer extracts or forwards `Authorization` manually
+- [x] `HealthCheckProducer` added
+- [x] `docs/krav.md` created with BEKB-FR-01 through BEKB-FR-07
+- [ ] `BackendGetResponse` and `BackendInformationsaccess` records added
+- [ ] `BekraftabeslutClient` returns `BackendGetResponse` for GET handlaggning
+- [ ] `InformationsaccessPublisher` publishes event on successful GET
+- [ ] No informationsaccess data forwarded to frontend (BEKB-FR-07.3)
+- [ ] Publish failure returns error without data (BEKB-FR-07.5)
 - [ ] `mvn test` green
 - [ ] `mvn spotless:apply` applied before commit

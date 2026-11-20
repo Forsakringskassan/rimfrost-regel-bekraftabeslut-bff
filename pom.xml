@@ -64,6 +64,12 @@
       <version>0.0.4</version>
     </dependency>
 
+    <dependency>
+      <groupId>se.fk.rimfrost.regel.bekraftabeslut.bff</groupId>
+      <artifactId>rimfrost-regel-bekraftabeslut-bff-openapi-jaxrs-spec</artifactId>
+      <version>0.0.1-SNAPSHOT</version>
+    </dependency>
+
   </dependencies>
 
   <repositories>
@@ -74,6 +80,10 @@
     <repository>
       <id>github--Forsakringskassan--repository</id>
       <url>https://maven.pkg.github.com/Forsakringskassan/repository</url>
+    </repository>
+    <repository>
+      <id>local</id>
+      <url>file://${user.home}/.m2/repository</url>
     </repository>
   </repositories>
 
