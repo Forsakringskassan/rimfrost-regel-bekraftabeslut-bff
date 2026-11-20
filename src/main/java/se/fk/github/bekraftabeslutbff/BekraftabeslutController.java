@@ -7,7 +7,7 @@ import jakarta.ws.rs.core.Response;
 import org.eclipse.microprofile.rest.client.inject.RestClient;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.slf4j.MDC;
+import se.fk.rimfrost.framework.bff.logging.LogContext;
 import se.fk.github.bekraftabeslutbff.integration.BekraftabeslutClient;
 import se.fk.github.bekraftabeslutbff.model.*;
 import se.fk.rimfrost.regel.bekraftabeslut.openapi.jaxrsspec.controllers.generatedsource.model.GetDataResponse;
@@ -15,7 +15,6 @@ import se.fk.rimfrost.regel.bekraftabeslut.openapi.jaxrsspec.controllers.generat
 import se.fk.rimfrost.regel.bekraftabeslut.openapi.jaxrsspec.controllers.generatedsource.model.Referensdata;
 
 import java.util.List;
-import java.util.Map;
 import java.util.UUID;
 
 @Path("")
@@ -35,43 +34,25 @@ public class BekraftabeslutController
    public Response getReferensdata(@PathParam("path") String path)
    {
       LOGGER.debug("GET /api/regel/bekraftabeslut/{}", path);
-      try
+      List<Referensdata> result;
+      switch (path)
       {
-         List<Referensdata> result;
-         switch (path)
-         {
-            case "avslutstyp":
-               result = bekraftabeslutClient.getAvslutstyp();
-               break;
-            case "beslutstyp":
-               result = bekraftabeslutClient.getBeslutstyp();
-               break;
-            case "beslutsutfallstyp":
-               result = bekraftabeslutClient.getBeslutsutfallstyp();
-               break;
-            case "yrkandestatus":
-               result = bekraftabeslutClient.getYrkandestatus();
-               break;
-            default:
-               return Response.status(404).entity(Map.of("error", "Unknown referensdata type")).build();
-         }
-         return Response.ok(result).build();
+         case "avslutstyp":
+            result = bekraftabeslutClient.getAvslutstyp();
+            break;
+         case "beslutstyp":
+            result = bekraftabeslutClient.getBeslutstyp();
+            break;
+         case "beslutsutfallstyp":
+            result = bekraftabeslutClient.getBeslutsutfallstyp();
+            break;
+         case "yrkandestatus":
+            result = bekraftabeslutClient.getYrkandestatus();
+            break;
+         default:
+            return Response.status(404).build();
       }
-      catch (WebApplicationException e)
-      {
-         LOGGER.error("Failed to fetch referensdata path={}, upstream status={}", path, e.getResponse().getStatus(), e);
-         return Response.status(e.getResponse().getStatus()).entity(Map.of("error", "Upstream error")).build();
-      }
-      catch (ProcessingException e)
-      {
-         LOGGER.error("Failed to fetch referensdata path={}, backend unreachable", path, e);
-         return Response.status(502).entity(Map.of("error", "Backend unavailable")).build();
-      }
-      catch (Exception e)
-      {
-         LOGGER.error("Failed to fetch referensdata path={}", path, e);
-         return Response.status(500).entity(Map.of("error", "Internal server error")).build();
-      }
+      return Response.ok(result).build();
    }
 
    // GET /api/regel/bekraftabeslut/handlaggning/{handlaggningId} - fetch decision data
@@ -79,31 +60,10 @@ public class BekraftabeslutController
    @Path("/api/regel/bekraftabeslut/handlaggning/{handlaggningId}")
    public Response getBekraftabeslut(@PathParam("handlaggningId") String handlaggningId)
    {
-      MDC.put("handlaggningId", handlaggningId);
-      try
+      try (var ignored = LogContext.put("handlaggningId", handlaggningId))
       {
          GetDataResponse result = bekraftabeslutClient.regelBekraftabeslutHandlaggningIdGet(UUID.fromString(handlaggningId));
          return Response.ok(result).build();
-      }
-      catch (WebApplicationException e)
-      {
-         LOGGER.error("Failed to fetch bekraftabeslut for handlaggningId={}, upstream status={}", handlaggningId,
-               e.getResponse().getStatus(), e);
-         return Response.status(e.getResponse().getStatus()).entity(Map.of("error", "Upstream error")).build();
-      }
-      catch (ProcessingException e)
-      {
-         LOGGER.error("Failed to fetch bekraftabeslut for handlaggningId={}, backend unreachable", handlaggningId, e);
-         return Response.status(502).entity(Map.of("error", "Backend unavailable")).build();
-      }
-      catch (Exception e)
-      {
-         LOGGER.error("Failed to fetch bekraftabeslut for handlaggningId={}", handlaggningId, e);
-         return Response.status(500).entity(Map.of("error", "Internal server error")).build();
-      }
-      finally
-      {
-         MDC.remove("handlaggningId");
       }
    }
 
@@ -112,8 +72,7 @@ public class BekraftabeslutController
    @Path("/api/regel/bekraftabeslut/{handlaggningId}")
    public Response patchBekraftabeslut(@PathParam("handlaggningId") String handlaggningId, @Valid PatchRequest body)
    {
-      MDC.put("handlaggningId", handlaggningId);
-      try
+      try (var ignored = LogContext.put("handlaggningId", handlaggningId))
       {
          PatchDataRequest backendBody = new PatchDataRequest(
                body.ersattningar(),
@@ -121,26 +80,6 @@ public class BekraftabeslutController
                      body.beslut().avslutstyp(), body.beslut().beslutstyp(), body.beslut().beslutsutfall()));
          bekraftabeslutClient.regelBekraftabeslutHandlaggningIdPatch(UUID.fromString(handlaggningId), backendBody);
          return Response.status(200).build();
-      }
-      catch (WebApplicationException e)
-      {
-         LOGGER.error("Failed to patch bekraftabeslut for handlaggningId={}, upstream status={}", handlaggningId,
-               e.getResponse().getStatus(), e);
-         return Response.status(e.getResponse().getStatus()).entity(Map.of("error", "Upstream error")).build();
-      }
-      catch (ProcessingException e)
-      {
-         LOGGER.error("Failed to patch bekraftabeslut for handlaggningId={}, backend unreachable", handlaggningId, e);
-         return Response.status(502).entity(Map.of("error", "Backend unavailable")).build();
-      }
-      catch (Exception e)
-      {
-         LOGGER.error("Failed to patch bekraftabeslut for handlaggningId={}", handlaggningId, e);
-         return Response.status(500).entity(Map.of("error", "Internal server error")).build();
-      }
-      finally
-      {
-         MDC.remove("handlaggningId");
       }
    }
 
@@ -150,58 +89,19 @@ public class BekraftabeslutController
    public Response getUppgiftsbeskrivning()
    {
       LOGGER.debug("GET /api/uppgiftsbeskrivning");
-      try
-      {
-         Object result = bekraftabeslutClient.getUppgiftsbeskrivning();
-         return Response.ok(result).build();
-      }
-      catch (WebApplicationException e)
-      {
-         LOGGER.error("Failed to fetch uppgiftsbeskrivning, upstream status={}", e.getResponse().getStatus(), e);
-         return Response.status(e.getResponse().getStatus()).entity(Map.of("error", "Failed to fetch from backend")).build();
-      }
-      catch (ProcessingException e)
-      {
-         LOGGER.error("Failed to fetch uppgiftsbeskrivning, backend unreachable", e);
-         return Response.status(502).entity(Map.of("error", "Backend service unavailable")).build();
-      }
-      catch (Exception e)
-      {
-         LOGGER.error("Failed to fetch uppgiftsbeskrivning", e);
-         return Response.status(500).entity(Map.of("error", "Internal server error")).build();
-      }
+      Object result = bekraftabeslutClient.getUppgiftsbeskrivning();
+      return Response.ok(result).build();
    }
 
    // POST /api/regel/bekraftabeslut/done
    @POST
    @Path("/api/regel/bekraftabeslut/done")
-   public Response done(@Valid BekraftabeslutRequest body, @HeaderParam("Authorization") String authorization)
+   public Response done(@Valid BekraftabeslutRequest body)
    {
-      MDC.put("handlaggningId", body.handlaggningId());
-      try
+      try (var ignored = LogContext.put("handlaggningId", body.handlaggningId()))
       {
-         bekraftabeslutClient.postDone(body.handlaggningId(), authorization);
+         bekraftabeslutClient.postDone(body.handlaggningId());
          return Response.status(204).build();
-      }
-      catch (WebApplicationException e)
-      {
-         LOGGER.error("Failed to call /done for handlaggningId={}, upstream status={}", body.handlaggningId(),
-               e.getResponse().getStatus(), e);
-         return Response.status(e.getResponse().getStatus()).entity(Map.of("error", "Upstream error")).build();
-      }
-      catch (ProcessingException e)
-      {
-         LOGGER.error("Failed to call /done for handlaggningId={}, backend unreachable", body.handlaggningId(), e);
-         return Response.status(502).entity(Map.of("error", "Backend unavailable")).build();
-      }
-      catch (Exception e)
-      {
-         LOGGER.error("Failed to call /done for handlaggningId={}", body.handlaggningId(), e);
-         return Response.status(500).entity(Map.of("error", "Internal server error")).build();
-      }
-      finally
-      {
-         MDC.remove("handlaggningId");
       }
    }
 }

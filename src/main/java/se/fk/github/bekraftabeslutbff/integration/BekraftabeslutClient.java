@@ -18,7 +18,5 @@ public interface BekraftabeslutClient extends BekraftaBeslutControllerApi, Defau
 
    @POST
    @Path("/regel/bekraftabeslut/{handlaggningId}/done")
-   Response postDone(
-         @PathParam("handlaggningId") String handlaggningId,
-         @HeaderParam("Authorization") String authorization);
+   Response postDone(@PathParam("handlaggningId") String handlaggningId);
 }

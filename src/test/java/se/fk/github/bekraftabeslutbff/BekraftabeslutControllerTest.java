@@ -1,9 +1,11 @@
 package se.fk.github.bekraftabeslutbff;
 
+import com.github.tomakehurst.wiremock.client.WireMock;
 import io.quarkus.test.common.QuarkusTestResource;
 import io.quarkus.test.junit.QuarkusTest;
 import io.restassured.http.ContentType;
 import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 import static com.github.tomakehurst.wiremock.client.WireMock.*;
@@ -258,6 +260,39 @@ class BekraftabeslutControllerTest
             .post("/api/regel/bekraftabeslut/done")
             .then()
             .statusCode(400);
+   }
+
+   @Test
+   @DisplayName("BEKB-NFR-02.1: BFF:n vidarebefordrar auktoriseringsuppgifter till regeltjänsten oförändrade")
+   void done_forwardsAuthorizationHeader()
+   {
+      WireMockTestResource.getServer().stubFor(post(urlEqualTo("/regel/bekraftabeslut/" + HANDLAGGNING_UUID + "/done"))
+            .withHeader("Authorization", WireMock.equalTo("Bearer test-token"))
+            .willReturn(aResponse().withStatus(204)));
+
+      given()
+            .contentType(ContentType.JSON)
+            .header("Authorization", "Bearer test-token")
+            .body("{\"handlaggningId\": \"" + HANDLAGGNING_UUID + "\"}")
+            .when()
+            .post("/api/regel/bekraftabeslut/done")
+            .then()
+            .statusCode(204);
+   }
+
+   @Test
+   @DisplayName("BEKB-NFR-01.2: Beredskapskontroll probar bakomliggande regeltjänst och returnerar UP när den svarar")
+   void healthReady_returnsUp_whenBackendReachable()
+   {
+      WireMockTestResource.getServer().stubFor(head(anyUrl())
+            .willReturn(aResponse().withStatus(200)));
+
+      given()
+            .when()
+            .get("/q/health/ready")
+            .then()
+            .statusCode(200)
+            .body("status", equalTo("UP"));
    }
 
 }
