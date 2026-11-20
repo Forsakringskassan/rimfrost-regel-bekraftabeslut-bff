@@ -1,5 +1,6 @@
 package se.fk.github.bekraftabeslutbff;
 
+import jakarta.inject.Inject;
 import jakarta.validation.Valid;
 import jakarta.ws.rs.*;
 import jakarta.ws.rs.core.MediaType;
@@ -9,8 +10,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import se.fk.rimfrost.framework.bff.logging.LogContext;
 import se.fk.github.bekraftabeslutbff.integration.BekraftabeslutClient;
+import se.fk.github.bekraftabeslutbff.integration.InformationsaccessPublisher;
 import se.fk.github.bekraftabeslutbff.model.*;
-import se.fk.rimfrost.regel.bekraftabeslut.openapi.jaxrsspec.controllers.generatedsource.model.GetDataResponse;
 import se.fk.rimfrost.regel.bekraftabeslut.openapi.jaxrsspec.controllers.generatedsource.model.PatchDataRequest;
 import se.fk.rimfrost.regel.bekraftabeslut.openapi.jaxrsspec.controllers.generatedsource.model.Referensdata;
 
@@ -27,6 +28,9 @@ public class BekraftabeslutController
 
    @RestClient
    BekraftabeslutClient bekraftabeslutClient;
+
+   @Inject
+   InformationsaccessPublisher informationsaccessPublisher;
 
    // GET /api/regel/bekraftabeslut/{path} - referensdata (avslutstyp, beslutstyp, beslutsutfallstyp, yrkandestatus)
    @GET
@@ -62,8 +66,10 @@ public class BekraftabeslutController
    {
       try (var ignored = LogContext.put("handlaggningId", handlaggningId))
       {
-         GetDataResponse result = bekraftabeslutClient.regelBekraftabeslutHandlaggningIdGet(UUID.fromString(handlaggningId));
-         return Response.ok(result).build();
+         BackendGetResponse response = bekraftabeslutClient.getHandlaggning(UUID.fromString(handlaggningId));
+         // Map before publishing so no access is logged for data never shown (BEKB-FR-07.3)
+         informationsaccessPublisher.publish(handlaggningId, response);
+         return Response.ok(response.data()).build();
       }
    }
 

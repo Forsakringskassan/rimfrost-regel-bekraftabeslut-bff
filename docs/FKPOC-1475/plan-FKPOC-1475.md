@@ -77,7 +77,7 @@ only `data` to the frontend.
   (frontend contract) and `rimfrost-regel-bekraftabeslut-openapi` (backend contract)
   as separate specs.
 
-- [ ] **7. Add backend response model**
+- [x] **7. Add backend response model**
 
   Create two records in `model/`:
 
@@ -87,14 +87,14 @@ only `data` to the frontend.
 
   These mirror the `RegelManuellReadResponse` structure already returned by the backend.
 
-- [ ] **8. Update BekraftabeslutClient return type**
+- [x] **8. Update BekraftabeslutClient return type**
 
   Change `regelBekraftabeslutHandlaggningIdGet()` return type from `GetDataResponse` to
   `BackendGetResponse` so Jackson deserializes both `data` and `informationsaccess`.
 
   Run `mvn test-compile -q` to verify.
 
-- [ ] **9. Add Kafka channel config for ILogg**
+- [x] **9. Add Kafka channel config for ILogg**
 
   Add to `src/main/resources/application.properties`:
 
@@ -106,7 +106,7 @@ only `data` to the frontend.
 
   Run `mvn test-compile -q` to verify.
 
-- [ ] **10. Add InformationsaccessPublisher**
+- [x] **10. Add InformationsaccessPublisher**
 
   Create `integration/InformationsaccessPublisher` and
   `integration/InformationsaccessPublishException` mirroring the rtf-manuell pattern.
@@ -119,7 +119,7 @@ only `data` to the frontend.
 
   Run `mvn test-compile -q` to verify.
 
-- [ ] **11. Update controller to publish informationsaccess and return only data**
+- [x] **11. Update controller to publish informationsaccess and return only data**
 
   In `getBekraftabeslut()`:
   - Change client call to receive `BackendGetResponse`
@@ -129,7 +129,7 @@ only `data` to the frontend.
 
   Run `mvn test` and verify all tests pass.
 
-- [ ] **12. Add tests for BEKB-FR-07**
+- [x] **12. Add tests for BEKB-FR-07**
 
   Add to `BekraftabeslutControllerTest`:
 
@@ -153,10 +153,10 @@ pattern already established in `rimfrost-regel-rtf-manuell-bff`.
 - [x] `done()` no longer extracts or forwards `Authorization` manually
 - [x] `HealthCheckProducer` added
 - [x] `docs/krav.md` created with BEKB-FR-01 through BEKB-FR-07
-- [ ] `BackendGetResponse` and `BackendInformationsaccess` records added
-- [ ] `BekraftabeslutClient` returns `BackendGetResponse` for GET handlaggning
-- [ ] `InformationsaccessPublisher` publishes event on successful GET
-- [ ] No informationsaccess data forwarded to frontend (BEKB-FR-07.3)
-- [ ] Publish failure returns error without data (BEKB-FR-07.5)
-- [ ] `mvn test` green
-- [ ] `mvn spotless:apply` applied before commit
+- [x] `BackendGetResponse` and `BackendInformationsaccess` records added
+- [x] `BekraftabeslutClient` returns `BackendGetResponse` for GET handlaggning
+- [x] `InformationsaccessPublisher` publishes event on successful GET
+- [x] No informationsaccess data forwarded to frontend (BEKB-FR-07.3)
+- [x] Publish failure returns error without data (BEKB-FR-07.5)
+- [x] `mvn test` green
+- [x] `mvn spotless:apply` applied before commit
