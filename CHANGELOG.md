@@ -2,6 +2,16 @@
 
 Changelog of rimfrost-regel-bekraftabeslut-bff.
 
+## 0.0.5 (2026-11-23)
+
+### Bug Fixes
+
+-  remove local Maven repository entry ([dad4f](https://github.com/Forsakringskassan/rimfrost-regel-bekraftabeslut-bff/commit/dad4fe1407daa74) Ulf Slunga)  
+-  refactor to rimfrost-framework-bff and implement BEKB-FR-07 ([3a912](https://github.com/Forsakringskassan/rimfrost-regel-bekraftabeslut-bff/commit/3a9128561ed488f) Ulf Slunga)  
+
+### Dependency updates
+
+- update node.js to v24.22.3 ([7ffb0](https://github.com/Forsakringskassan/rimfrost-regel-bekraftabeslut-bff/commit/7ffb042229d225d) renovate[bot])  
 ## 0.0.4 (2026-11-07)
 
 ### Bug Fixes
