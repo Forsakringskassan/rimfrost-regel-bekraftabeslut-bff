@@ -93,10 +93,6 @@
       <id>github--Forsakringskassan--repository</id>
       <url>https://maven.pkg.github.com/Forsakringskassan/repository</url>
     </repository>
-    <repository>
-      <id>local</id>
-      <url>file://${user.home}/.m2/repository</url>
-    </repository>
   </repositories>
 
   <build>
